@@ -496,6 +496,31 @@ def MaxStep(X0, XNew, factor = 1):
 		dX = dX * max_step_size / numpy.linalg.norm(dX)
 	return X0 + dX
 
+def HessianUpdator(Bk, yk, sk):
+	#10.1002/wcms.34
+	Bk_BFGS = Bk + float(1.0/(sk*yk.T)) * ( float(1+(yk*Bk*yk.T)/(sk*yk.T))*(sk.T*sk)- (sk.T*yk*Bk+Bk*yk.T*sk))
+	Bk_SR1 = Bk + (yk.T - Bk*sk.T)*(yk.T-Bk*sk.T).T/float((yk.T-Bk*sk.T).T*sk.T)# slow convergence
+	Bk_PSB = Bk + ((yk.T - Bk*sk.T)*sk + sk.T*(yk.T-Bk*sk.T).T)/(sk*sk.T) \
+	- (float(sk*(yk.T-Bk*sk.T))*sk.T*sk)/float(sk*sk.T)**2
+	
+	phi = float((yk.T - Bk*sk.T).T*sk.T)**2 / \
+	float((yk.T-Bk*sk.T).T*(yk.T-Bk*sk.T)) / float(sk*sk.T)
+	Bk_Bofill = phi*Bk_SR1 + (1-phi)*Bk_PSB # slow convergence
+	Bk = Bk_PSB
+	eigval, eigvec = numpy.linalg.eig(Bk)
+	eigval = numpy.real(eigval)
+	print(eigval)
+	numimag = 0
+	#Bk_BFGS is always positive finite, while Bk_PBS is not.
+	for i in eigval:
+		if i<0:
+			print(i)
+			numimag += 1
+	if numimag > 0:
+		print('Negative eigenvals found for Bk_PSB, Bk_BFGS used instead')
+		Bk = Bk_BFGS
+	return Bk
+
 def BFGS(X0, G0, B0, nstep):  
 	print(f'\nNow Entering BFGS Step {nstep}')
 	XNew = BFGSpropagation(X0, G0, B0)
@@ -504,9 +529,8 @@ def BFGS(X0, G0, B0, nstep):
 	sk = XNew - X0 
 	GNew, E1, E2 = getG(nstep + 1)
 	yk = numpy.mat(GNew - G0)
-	Bk = B0
-	#Bk = Bk - (Bk * sk.T * sk * Bk) / float(sk * Bk * sk.T) + (yk.T * yk) / float(yk * sk.T)
-	Bk = Bk + float(1.0/(sk*yk.T)) * ( float(1+(yk*Bk*yk.T)/(sk*yk.T))*(sk.T*sk)- (sk.T*yk*Bk+Bk*yk.T*sk))
+	Bk = HessianUpdator(B0, yk, sk)
+	#Bk_BFGS = Bk - (Bk * sk.T * sk * Bk) / float(sk * Bk * sk.T) + (yk.T * yk) / float(yk * sk.T)
 	return [XNew, GNew, Bk, E1, E2]
 
 def GDIIS(Xs, Gs, Bs, nstep, Es, flag = 'gdiis'):  
@@ -523,9 +547,7 @@ def GDIIS(Xs, Gs, Bs, nstep, Es, flag = 'gdiis'):
 	sk = XNew - Xs[-1]
 	GNew, E1, E2 = getG(nstep + 1)
 	yk = numpy.mat(GNew - Gs[-1])
-	Bk = Bs[-1]
-	#Bk = Bk - (Bk * sk.T * sk * Bk) / float(sk * Bk * sk.T) + (yk.T * yk) / float(yk * sk.T)
-	Bk = Bk + float(1.0/(sk*yk.T)) * ( float(1+(yk*Bk*yk.T)/(sk*yk.T))*(sk.T*sk)- (sk.T*yk*Bk+Bk*yk.T*sk))
+	Bk = HessianUpdator(Bs[-1], yk, sk)
 	return [XNew, GNew, Bk, E1, E2]
 
 def Converged(E1, E2, X0, X1, G1):

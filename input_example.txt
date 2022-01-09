@@ -1,0 +1,50 @@
+#This subset is required. It controls your quantum chemistry tasks.
+nprocs = 8 #processors
+mem = 8GB # memory to be used. change this into the maxcore value if you want to use ORCA
+method = wb97xd def2sv # your keywords line. It will be presented in the job files. Don't write guess=mix or stable=opt; they will be added automatically.
+td1 =  # keywords for TD-DFT of state A (only for Gaussian; please write it in the tail part for ORCA)
+td2 = # keywords for TD-DFT of state B (only for Gaussian; please write it in the tail part for ORCA)
+mp2 = false #set true for MP2 or doubly hybrid calculation in Gaussian
+charge = 0
+mult1 = 1 # multiplicity of state A
+mult2 = 3 # multiplicity of state B
+mode = stable #normal; stable; read; inter_read; noread
+
+#This subset is optional. It controls the convergence threshols, and the details of the GDIIS algorithm. Shown here are the default values.
+dE_thresh = 0.000050
+rms_thresh = 0.0025
+max_dis_thresh = 0.004
+max_g_thresh = 0.0007
+rms_g_thresh = 0.0005
+max_steps = 100
+max_step_size = 0.1
+reduced_factor = 0.5 # the gdiis stepsize will be reduced by this factor when rms_gradient is close to converge
+
+# This subset controls which program you are using, and how to call them
+program = gaussian  #gaussian or orca
+gau_comm = 'g16'
+orca_comm = '/opt/orca5/orca'
+xtb_comm = 'xtb'
+
+#Between *geom and *, write the cartesian coordinate of your initial geometry (in angstrom)
+*geom
+ C                 -0.03266394   -2.07149616    0.00000000
+ H                  0.76176530   -1.26928217    0.00000000
+ H                 -0.91673236   -1.36926867    0.00000000
+ *
+#If you have anything to be put at the end of the input file, write it here. This part is especially useful for ORCA: you can add anything related to your keywords here.
+*tail1
+#-C -H 0
+#6-31G(d)
+#****
+*
+*tail2
+*
+
+#This subset controls the constraints. R 1 2 1.0 means to fix distance between atom 1 and 2 (start from 1) to be 1.0 angstrom.
+*constr
+#R 1 2 1.0
+#A 1 2 3 100.0 # to fix angle 1-2-3 to be 100 degree
+#S R 1 2 1.0 10 0.1 # to run a scan of R(1,2) starting from 1.0 angstrom, with 10 steps of 0.1 angstrom
+#S R 2 3 1.5 10 0.1 # you can at most set a 2D-scan
+*

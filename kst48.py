@@ -9,9 +9,9 @@ rms_g_thresh = 0.0005
 max_steps = 100
 max_step_size = 0.1
 n_atom = 0
-reduced_factor = 1
+reduced_factor = 0.5
 
-list_element = ['C','H','H']
+list_element = []
 header_a = ''
 header_b = ''
 tail1 = ''

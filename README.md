@@ -6,6 +6,8 @@ KST48 provides a much more user-friendly and extensible solution for MECP locati
 
 In addition to the location of MECP without any geometrical constrains, KST48 supports constrained optimization of bond lengths or angles, as well as the 1D- or 2D- scanning in the 3N-7 dimension of space with E1=E2 satisfied.
 
+![logo](https://github.com/RimoAccelerator/KST48/blob/main/logo_KST48.png)
+
 # Requirements
 Python 3
 Numpy

@@ -153,7 +153,7 @@ def inputParser(path):
 					elif l_splitted[1] == 'a':
 						scans.append([l_splitted[1:5], l_splitted[5:]])
 			if '=' in l and not isTail1 and not isTail2:
-				parameter = l.split('=')[1].strip()
+				parameter = '='.join(l.split('=')[1:]).strip()
 				if 'mem' in l:
 					mem = parameter
 				elif 'nprocs' in l:
@@ -509,16 +509,16 @@ def HessianUpdator(Bk, yk, sk):
 	Bk = Bk_PSB
 	eigval, eigvec = numpy.linalg.eig(Bk)
 	eigval = numpy.real(eigval)
-	print(eigval)
+	#print(eigval)
 	numimag = 0
 	#Bk_BFGS is always positive finite, while Bk_PBS is not.
 	for i in eigval:
 		if i<0:
-			print(i)
+			#print(i)
 			numimag += 1
-	if numimag > 0:
-		print('Negative eigenvals found for Bk_PSB, Bk_BFGS used instead')
-		Bk = Bk_BFGS
+	#if numimag > 0:
+	#	print('Negative eigenvals found for Bk_PSB, Bk_BFGS used instead')
+	#	Bk = Bk_BFGS
 	return Bk
 
 def BFGS(X0, G0, B0, nstep):  

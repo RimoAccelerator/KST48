@@ -43,15 +43,9 @@ KST48 allows the user to apply geometry constraints to the molecule, in order to
 
 # Examples
 
-Figure 1. The located MECP under the normal and stable mode
-
 ![The located MECP under the normal and stable mode](Figure1.png)
 
-Figure 2. The convergence of KST48 and Harvey’s program for example molecules
-
 ![The convergence of KST48 and Harvey’s program for example molecules](Figure2.png)
-
-Figure 3. The 1-D scanning energy curve for the MECP of CH2
 
 ![The 1-D scanning energy curve for the MECP of CH2](Figure3.png)
 

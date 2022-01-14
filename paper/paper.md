@@ -29,16 +29,26 @@ Up till now, the location of MECP ([@bearpark1994direct]) almost relies the Fort
 
 # Functionality
 
-1.	MECP location
+## 1.	MECP location
+
 MECP invokes with a quantum chemical program, either Gaussian or ORCA, according to the user input, and try to locate a MECP based on the energy and gradient obtained by this program. The geometry optimization of MECP in KST48 is based on the GDIIS algorithm ([-@farkas2002methods]). In the first three steps the geometry is propagated by the BFGS algorithm ([@broyden1970convergence]), and then the GDIIS iteration is entered, with the Hessian matrix updated by the Powell-symmetric-Broyden method ([@dennis1996numerical]). The convergence is generally faster than Harvey’s Fortran program. The maximum steps, maximum size of step and convergence threshold can be easily changed accordingly in the input file.
-2.	Control of wave-function
+
+## 2.	Control of wave-function
+
 In many cases, the stability of wave-functions should be ensured. There are four running mode in KST48, in order to enable the user to control the generating mode of wave-function:
+
 2.1.	Normal: No special treatment.
+
 2.2.	Stable: KST48 will automatically run a wave-function stability calculation of the initial geometry, and the so-generated wave-function will be read for the following optimization. 
+
 2.3.	Read: If the user has already had the wave-function file, KST48 will read them and check the stability, and then do the optimization based on them in the “read” mode.
+
 2.4.	Inter_read In some very hard cases, a wave-function may not be correct even though it is stable. For example, for some molecule, one can find a stable restricted wave-function for its singlet state, although there is an unrestricted wave-function significantly lower in energy, and only can be obtained byreading the high-spin wave-function. In the “inter_read” mode, the high-spin state B will firstly be calculated in the first step, and then low-spin state A reads its wave-function. Stability will be automatically checked. noread In normal mode, each step in the optimization reads the wave-function from the previous step. 
+
 2.5.	Noread: No wavefunction is read, even during the iterative geometry optimization.
-3.	Constrained optimization and potential energy scan
+
+## 3.	Constrained optimization and potential energy scan
+
 KST48 allows the user to apply geometry constraints to the molecule, in order to freeze one bond or angle. The constraints are achieved by a Lagrangian method. The potential energy surface scanning (1-D or 2-D) is also supported.
 
 # Examples

@@ -27,6 +27,7 @@ When a chemical reaction occurs with possible change in electronic state, e.g. t
 Up till now, the location of MECP ([@bearpark1994direct]) almost relies the Fortran code by [@harvey1998singlet] in 1998, which requires multiple steps to set up, including the modification of source code and recompilation. Although some of the user interfaces, such as [@easyMECP] and [@sobMECP], were produced to wrap Harvey’s program and provides a more user-friendly package, the study on MECP still suffers from the limited functionality of Harvey’s original code. For example, only MECPs for ground states with different multiplicity can be located; no geometry constraints can be applied; the wave-function for the geometry optimization is hard to control, and the geometry convergence is slow. KST48 is, however, a purely Python-based program which does not depend on Harvey’s code, with higher convergence efficiency, and more functionality. By using KST48, the study on MECPs can be significantly accelerated.
 
 # Functionality
+
 1.	MECP location
 MECP invokes with a quantum chemical program, either Gaussian or ORCA, according to the user input, and try to locate a MECP based on the energy and gradient obtained by this program. The geometry optimization of MECP in KST48 is based on the GDIIS algorithm ([-@farkas2002methods]). In the first three steps the geometry is propagated by the BFGS algorithm ([@broyden1970convergence]), and then the GDIIS iteration is entered, with the Hessian matrix updated by the Powell-symmetric-Broyden method ([@dennis1996numerical]). The convergence is generally faster than Harvey’s Fortran program. The maximum steps, maximum size of step and convergence threshold can be easily changed accordingly in the input file.
 2.	Control of wave-function
@@ -38,9 +39,14 @@ In many cases, the stability of wave-functions should be ensured. There are four
 2.5.	Noread: No wavefunction is read, even during the iterative geometry optimization.
 3.	Constrained optimization and potential energy scan
 KST48 allows the user to apply geometry constraints to the molecule, in order to freeze one bond or angle. The constraints are achieved by a Lagrangian method. The potential energy surface scanning (1-D or 2-D) is also supported.
+
 # Examples
+
+Figure 1. The located MECP under the normal and stable mode
 ![The located MECP under the normal and stable mode](Figure1.png)
+Figure 2. The convergence of KST48 and Harvey’s program for example molecules
 ![The convergence of KST48 and Harvey’s program for example molecules](Figure2.png)
+Figure 3. The 1-D scanning energy curve for the MECP of CH2
 ![The 1-D scanning energy curve for the MECP of CH2](Figure3.png)
 
 # Acknowledgements

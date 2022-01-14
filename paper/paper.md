@@ -19,7 +19,7 @@ bibliography: paper.bib
 
 # Summary
 
-The location of minimum energy crossing point (MECP) is highly important in the computational study of chemical reactions with possible spin state crossing. Despite the importance of MECP, the ability of MECP location and study is limited by the functionality of the most popular MECP location program, Harvey’s MECP program. KST48 provides a faster, more user-friendly and more controllable option for MECP location. In addition to the basic functionality which has been implemented before, KST48 also supports constrained optimization of MECP and potential energy scanning, and owns the interfaces to two of the most popular quantum chemical program, namely Gaussian and ORCA.
+While minimum energy crossing point (MECP) is highly important in the computational study of chemical reactions with possible electronic state crossing, the ability of MECP location and study is limited by the functionality of the available programs. KST48 provides a faster, more user-friendly and more controllable option for MECP location. In addition to the basic functionality which has been implemented before, KST48 also supports constrained optimization of MECP and potential energy scanning, and owns the interfaces to two of the most popular quantum chemical program, namely Gaussian and ORCA.
  
 # Statement of need
 

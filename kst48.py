@@ -185,7 +185,7 @@ def inputParser(path):
                     elif l_splitted[1] == 'a':
                         SCANS.append([l_splitted[1:5], l_splitted[5:]])
             if '=' in l and not isTAIL1 and not isTAIL2:
-                parameter = l.split('=')[1].strip()
+                parameter = '='.join(l.split('=')[1:]).strip()
                 if 'mem' in l:
                     mem = parameter
                 elif 'nprocs' in l:

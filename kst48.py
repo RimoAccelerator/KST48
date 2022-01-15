@@ -137,6 +137,8 @@ def inputParser(path):
     global TAIL1
     global TAIL2
     global REDUCED_FACTOR
+    global MAX_STEPS
+    global MAX_STEP_SIZE
     charge, mult1, mult2, method, nprocs, mem = ['', '', '', '', '', '']
     command = {'gau': '', 'orca': '', 'xtb': ''}
     runMode = 'normal'

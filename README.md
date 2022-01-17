@@ -88,7 +88,9 @@ There are several modes you can choose:
 
 # Citation
 Any use of this code should cite this Github Page (https://github.com/RimoAccelerator/KST48/). Information should be included is listed as the follow:
-KST48, https://github.com/RimoAccelerator/KST48/edit/main/README.md. Arthor: Yumiao Ma (BSJ Institute). accessed by ...
+
+KST48, https://github.com/RimoAccelerator/KST48/edit/main/README.md. Author: Yumiao Ma (BSJ Institute). accessed by ...
+
 The citation will be updated once KST48 is published in a journal or as preprint.
 
 # Bug Report

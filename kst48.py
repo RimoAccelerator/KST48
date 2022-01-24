@@ -148,6 +148,7 @@ def inputParser(path):
         isTAIL2 = False
         isConst = False
         for l in f:
+            l_bk = l
             l = l.lower().strip()
             if '#' in l:
                 l = l.split('#')[0]
@@ -188,6 +189,7 @@ def inputParser(path):
                         SCANS.append([l_splitted[1:5], l_splitted[5:]])
             if '=' in l and not isTAIL1 and not isTAIL2:
                 parameter = '='.join(l.split('=')[1:]).strip()
+                parameter_bk = '='.join(l_bk.split('=')[1:]).strip()
                 if 'mem' in l:
                     mem = parameter
                 elif 'nprocs' in l:
@@ -217,11 +219,11 @@ def inputParser(path):
                 elif 'program' in l:
                     PROG = parameter
                 elif 'gau_comm' in l:
-                    command['gaussian'] = parameter
+                    command['gaussian'] = parameter_bk
                 elif 'orca_comm' in l:
-                    command['orca'] = parameter
+                    command['orca'] = parameter_bk
                 elif 'xtb_comm' in l:
-                    command['xtb'] = parameter
+                    command['xtb'] = parameter_bk
                 elif 'mode' in l:
                     runMode = parameter
                 elif 'td1' in l:
@@ -811,6 +813,7 @@ def main():
     print('****KST48 PROGRAM: a powerful tool for MECP locating****')
     print('****By Yumiao Ma, BSJ Institute, 2022/01/09****\n')
     _, inp = sys.argv
+    os.system('mkdir JOBS')
     nprocs, mem, charge, mult1, mult2, method, runMode = inputParser(
         sys.argv[1])
     header_1, header_2 = buildInitJob(

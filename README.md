@@ -1,4 +1,4 @@
-# KST48
+# KST48: A Powerful Tool for MECP location
 
 KST48 is a purely-python program to locate Minimum Energy Crossing Points (MECPs), based on the searching algorithm by Bearpark, Robb and Schlegal in 1994 (Chemical physics letters, **1994**, 223(3): 269-274.).  An early implement of this algorithm is Harvey's pioneering work in 1998 (Theoretical Chemistry Accounts, **1998**, 99(2): 95-99.), which remains the most popular program to look for MECPs. Harvey's Fortran-based MECP program works in combination with Gaussian: by involving Gaussian to calculate the forces and energies of the two states, a BFGS minimization algorithm was performed and gives an MECP starting from the input geometry.
 
@@ -89,11 +89,12 @@ There are several modes you can choose:
 # Citation
 Any use of this code should cite this Github Page (https://github.com/RimoAccelerator/KST48/). Information should be included is listed as the follow:
 
-KST48, https://github.com/RimoAccelerator/KST48/edit/main/README.md. Author: Yumiao Ma (BSJ Institute). accessed by ...
+KST48, https://github.com/RimoAccelerator/KST48 Author: Yumiao Ma (BSJ Institute). accessed by ...
 
 The citation will be updated once KST48 is published in a journal or as preprint.
 
 # Bug Report
 You are welcomed to report any bug or problems to ymma@bsj-institute.top.
 
-
+# TODO List
+In the next version of KST48, the interfaces to BAGEL and xtb will be added.

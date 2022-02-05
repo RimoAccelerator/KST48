@@ -34,7 +34,7 @@ MP2 = False
 DELETE_GBW = False
 
 LAMBDAS = []
-
+BAGELMODEL = ''
 
 def buildHeader(
         NProcs,
@@ -119,13 +119,27 @@ is always beneficial. So please do not forget to add relevant convergence contro
         os.system(f'cp JOBS/pre_A.gbw JOBS/a.gbw')
 
     # elif PROG == 'xtb':
-    #	writeXYZ(geom, f'JOBS/pre_A.xyz')
-    #	writeXYZ(geom, f'JOBS/pre_B.xyz')
-    #	os.system(f'{prog_comm} JOBS/pre.xyz --engrad')
-    #	os.system(f'{prog_comm} JOBS/pre.xyz --engrad')
+    #   writeXYZ(geom, f'JOBS/pre_A.xyz')
+    #   writeXYZ(geom, f'JOBS/pre_B.xyz')
+    #   os.system(f'{prog_comm} JOBS/pre.xyz --engrad')
+    #   os.system(f'{prog_comm} JOBS/pre.xyz --engrad')
+def geom2Json(Elements, Geom):
+    result = '"geometry" : [\n'
+    Geom = numpy.mat(Geom)
+    for i in range(NUM_ATOM):
+        result += ''.join([
+            '{ "atom" : ', \
+            f'"{Elements[i]}",' \
+            f'"xyz" : [ {Geom[0, i*3]}, {Geom[0, i*3 + 1]}, {Geom[0, i*3 + 2]} ]' \
+             '}'])
+        if i != NUM_ATOM - 1:
+            result += ','
+        result += '\n'
+    result += ']\n'
+    return result
 
 
-def inputParser(path):
+def inputParser(Path):
     global GEOM
     global LIST_ELEMENT
     global NUM_ATOM
@@ -139,10 +153,11 @@ def inputParser(path):
     global REDUCED_FACTOR
     global MAX_STEPS
     global MAX_STEP_SIZE
-    charge, mult1, mult2, method, nprocs, mem = ['', '', '', '', '', '']
-    command = {'gau': '', 'orca': '', 'xtb': ''}
+    global BAGELMODEL 
+    charge, mult1, mult2, method, nprocs, mem, state1, state2 = ['', '', '', '', '', '', '', '']
+    command = {'gau': '', 'orca': '', 'xtb': '', 'bagel': ''}
     runMode = 'normal'
-    with open(path) as f:
+    with open(Path) as f:
         isGEOM = False
         isTAIL1 = False
         isTAIL2 = False
@@ -199,9 +214,13 @@ def inputParser(path):
                 elif 'method' in l:
                     method = parameter
                 elif 'mult1' in l:
-                    mult1 = parameter
+                    mult1 = int(parameter)
                 elif 'mult2' in l:
-                    mult2 = parameter
+                    mult2 = int(parameter)
+                elif 'state1' in l:
+                    state1 = int(parameter)
+                elif 'state2' in l:
+                    state2 = int(parameter)
                 elif 'thresh_de' in l:
                     THRESH_dE = float(parameter)
                 elif 'thresh_rms' in l:
@@ -224,8 +243,8 @@ def inputParser(path):
                     command['orca'] = parameter_bk
                 elif 'xtb_comm' in l:
                     command['xtb'] = parameter_bk
-                elif 'mode' in l:
-                    runMode = parameter
+                elif 'bagel_comm' in l:
+                    command['bagel'] = parameter_bk
                 elif 'td1' in l:
                     TD1 = parameter
                 elif 'td2' in l:
@@ -234,9 +253,14 @@ def inputParser(path):
                     MP2 = True
                 elif 'reduced_factor' in l:
                     REDUCED_FACTOR = float(parameter)
+                elif 'bagel_model' in l:
+                    BAGELMODEL = parameter
+                    print(f'You are using the BAGEL model using file {BAGELMODEL}. Please ensure it is correct.')
+                elif 'mode' in l:
+                    runMode = parameter
     GEOM = numpy.mat(GEOM)
     PROG_COMM = command[PROG]
-    return [nprocs, mem, charge, mult1, mult2, method, runMode]
+    return [nprocs, mem, charge, mult1, mult2, method, runMode, state1, state2]
 
 
 def modifyMETHOD(Prog, Method, RunMode):
@@ -336,12 +360,52 @@ def readForceAndGeomForORCA(path):
         geomArr.extend(LAMBDAS)
     return [geomArr, forceArr, E]
 
+def readForceAndGeomForBAGEL(path, state):
+    forceArr = []
+    geomArr = []
+    E = 0
+    with open(path) as f:
+        isForce = False
+        isGeom = False
+        isEnergy = False
+        E = 0
+        for l in f.readlines():
+            if '*** Geometry ***' in l:
+                isGeom = True
+            elif 'Number of auxiliary basis functions' in l:
+                isGeom = False
+            elif 'Nuclear energy gradient' in l:
+                isForce = True
+            elif '* Gradient computed with' in l:
+                isForce = False
+            elif ' === FCI iteration ===' in l:
+                isEnergy = True
+            elif isEnergy and (re.match("\s*[0-9]+\s*[0-9]+\s*\*\s*\-*[0-9]+", l) is not None):
+                if int(l.split()[1]) == int(state):
+                    E = float(l.split()[-3])
+            elif isGeom and '{ "atom" :' in l:
+                #{ "atom" : "C", "xyz" : [      7.990821,      1.210697,      3.574653 ] },
+                thisAtom = l.split('[')[-1].split(']')[0].split(',')
+                geomArr.extend(thisAtom)
+            elif isForce and (re.match("\s*[x,y,z]\s*\-*[0-9]+", l) is not None):
+                forceArr.append(l.split()[-1])
+    # BAGEL outputs gradients. Here it is adapted to gaussian, which is the
+    # force
+    geomArr = [float(i) * 0.52918 for i in geomArr]  # change Bohr to angstrom
+    forceArr = [-float(i) for i in forceArr]
+    forceArr = addConstLag(geomArr, forceArr, CONSTRAINTS)
+    if len(geomArr) == NUM_ATOM * 3:
+        geomArr.extend(LAMBDAS)
+    print(f'Now reading energy for the state {state}, it is {E}')
+    return [geomArr, forceArr, E]
 
-def readForceAndGeom(path):
+def readForceAndGeom(path, state = 0):
     if PROG == 'gaussian':
         return readForceAndGeomForGaussian(path)
     elif PROG == 'orca':
         return readForceAndGeomForORCA(path)
+    elif PROG == 'bagel':
+        return readForceAndGeomForBAGEL(path, state)
     else:
         raise Exception('Unsupported program!')
 
@@ -519,7 +583,7 @@ def writeORCA(Geom, Header, Tail, Name):
 
 def writeXYZ(Geom, Name):
     f = open(Name, 'w+')
-    f.write(NUM_ATOM)
+    f.write(str(NUM_ATOM))
     f.write('\n\n')
     for i in range(NUM_ATOM):
         f.write('{ele}  {x}  {y}  {z}'.format(
@@ -528,8 +592,25 @@ def writeXYZ(Geom, Name):
     f.write('\n')
     f.close()
 
+def writeBAGEL(Geom, Model, Name, State = 0, Mult = 1):
+    #if not os.path.isfile(Model):
+    #        raise Exception('You used BAGEL but no model input found!')
+    bagel = ''
+    with open(Model) as f:
+        for l in f:
+            if 'geometry' in l:
+                bagel += geom2Json(LIST_ELEMENT, Geom)
+            elif 'target' in l:
+                bagel += f'"target" : {State},\n'
+            elif 'nspin' in l:
+                bagel += f'"nspin": {Mult - 1},\n'
+            else:
+                bagel += l
+    f = open(Name, 'w+')
+    f.write(bagel)
+    f.close()
 
-def runEachStep(Geom, NStep, Header_A, Header_B, Tail1, Tail2):
+def runEachStep(Geom, NStep, Header_A, Header_B, Tail1, Tail2, BagelModel, mult1, mult2, state1, state2):
     if PROG == 'gaussian':
         writeGjf(Geom, Header_A, Tail1, f'JOBS/{NStep}_A.gjf')
         writeGjf(Geom, Header_B, Tail2, f'JOBS/{NStep}_B.gjf')
@@ -546,15 +627,22 @@ def runEachStep(Geom, NStep, Header_A, Header_B, Tail1, Tail2):
         else:
             os.system(f'mv JOBS/{NStep}_B.gbw  JOBS/b.gbw')
             os.system(f'mv JOBS/{NStep}_A.gbw  JOBS/a.gbw')
+        writeXYZ(Geom, f'JOBS/{NStep}.xyz')
     elif PROG == 'xtb':
         writeXYZ(Geom, Header_A, Tail1, f'JOBS/{NStep}_A.xyz')
         writeXYZ(Geom, Header_B, Tail2, f'JOBS/{NStep}_B.xyz')
         os.system(f'{PROG_COMM} JOBS/{NStep}_B.xyz')
         os.system(f'{PROG_COMM} JOBS/{NStep}_A.xyz')
+    elif PROG == 'bagel':
+        writeBAGEL(Geom, BAGELMODEL, f'JOBS/{NStep}_A.json', Mult = mult1, State = state1)
+        writeBAGEL(Geom, BAGELMODEL, f'JOBS/{NStep}_B.json', Mult = mult2, State = state2)
+        os.system(f'{PROG_COMM} JOBS/{NStep}_B.json > JOBS/{NStep}_B.log')
+        os.system(f'{PROG_COMM} JOBS/{NStep}_A.json > JOBS/{NStep}_A.log')
+        writeXYZ(Geom, f'JOBS/{NStep}.xyz')
 
-def getG(NStep):
-    _, f1, E1 = readForceAndGeom(f'JOBS/{NStep}_A.log')
-    _, f2, E2 = readForceAndGeom(f'JOBS/{NStep}_B.log')
+def getG(NStep, state1 = 0, state2 = 0):
+    _, f1, E1 = readForceAndGeom(f'JOBS/{NStep}_A.log', state1)
+    _, f2, E2 = readForceAndGeom(f'JOBS/{NStep}_B.log', state2)
     f1 = -numpy.array(f1)
     f2 = -numpy.array(f2)
     xVec = (f1 - f2)  # Please check this sign here
@@ -583,7 +671,7 @@ def propagationBFGS(X0, Gk, Bk):
     return XNew
 
 def propagationGDIIS(Xs, Gs, Hs):
-	# Produce a new geometry based on the GDIIS algorith, see https://manual.q-chem.com/5.3/A1.S7.html
+    # Produce a new geometry based on the GDIIS algorith, see https://manual.q-chem.com/5.3/A1.S7.html
     global LAMBDAS
     dimension = len(Xs)
     if len(Hs) != len(Xs):
@@ -680,25 +768,25 @@ def HessianUpdator(Bk, yk, sk):
             # print(i)
             numimag += 1
     # if numimag > 0:
-    #	print('Negative eigenvals found for Bk_PSB, Bk_BFGS used instead')
-    #	Bk = Bk_BFGS
+    #   print('Negative eigenvals found for Bk_PSB, Bk_BFGS used instead')
+    #   Bk = Bk_BFGS
     return Bk
 
 
-def BFGS(X0, G0, B0, nstep):
+def BFGS(X0, G0, B0, nstep, state1 = 0, state2 = 0, mult1 = 1, mult2 = 1):
     print(f'\nNow Entering BFGS Step {nstep}')
     XNew = propagationBFGS(X0, G0, B0)
     XNew = MaxStep(X0, XNew)
-    runEachStep(XNew, nstep + 1, HEADER_A, HEADER_B, TAIL1, TAIL2)
+    runEachStep(XNew, nstep + 1, HEADER_A, HEADER_B, TAIL1, TAIL2, BAGELMODEL, mult1, mult2, state1, state2)
     sk = XNew - X0
-    GNew, E1, E2 = getG(nstep + 1)
+    GNew, E1, E2 = getG(nstep + 1, state1 = state1, state2 = state2)
     yk = numpy.mat(GNew - G0)
     Bk = HessianUpdator(B0, yk, sk)
     # Bk_BFGS = Bk - (Bk * sk.T * sk * Bk) / float(sk * Bk * sk.T) + (yk.T * yk) / float(yk * sk.T)
     return [XNew, GNew, Bk, E1, E2]
 
 
-def GDIIS(Xs, Gs, Bs, nstep, Es, flag='gdiis'):
+def GDIIS(Xs, Gs, Bs, nstep, Es, flag='gdiis', state1 = 0, state2 = 0, mult1 = 1, mult2 = 1):
     print(f'\nNow Entering GDIIS Step {nstep}')
     XNew = propagationGDIIS(Xs, Gs, Bs)
     if flag == 'gediis':
@@ -708,9 +796,9 @@ def GDIIS(Xs, Gs, Bs, nstep, Es, flag='gdiis'):
     if numpy.linalg.norm(Gs) < THRESH_RMS_G * 10:
         factor = REDUCED_FACTOR
     XNew = MaxStep(Xs[-1], XNew, factor)
-    runEachStep(XNew, nstep + 1, HEADER_A, HEADER_B, TAIL1, TAIL2)
+    runEachStep(XNew, nstep + 1, HEADER_A, HEADER_B, TAIL1, TAIL2, BAGELMODEL, mult1, mult2, state1, state2)
     sk = XNew - Xs[-1]
-    GNew, E1, E2 = getG(nstep + 1)
+    GNew, E1, E2 = getG(nstep + 1, state1 = state1, state2 = state2)
     yk = numpy.mat(GNew - Gs[-1])
     Bk = HessianUpdator(Bs[-1], yk, sk)
     return [XNew, GNew, Bk, E1, E2]
@@ -770,19 +858,19 @@ def isConverged(E1, E2, X0, X1, G1):
     else:
         return False
 
-def runOpt(X0, flag='hybrid'):
+def runOpt(X0, flag='hybrid', state1 = 0, state2 = 0, mult1 = 0, mult2 = 0):
     B0 = numpy.eye(numpy.shape(X0)[0])
     X0 = numpy.mat(X0)
-    G0, E1, E2 = getG(0)
+    G0, E1, E2 = getG(0, state1 = state1, state2 = state2)
     n_step = 0
     Xs, Bs, Gs, Es = [[], [], [], []]
     X1, G1, B1, E1, E2 = [None, None, None, 0, 0]
     E0 = E1
     while True:
         if flag == 'pure' or n_step < 3:
-            X1, G1, B1, E1, E2 = BFGS(X0, G0, B0, n_step)
+            X1, G1, B1, E1, E2 = BFGS(X0, G0, B0, n_step, state1 = state1, state2 = state2, mult1 = mult1, mult2 = mult2)
         elif flag == 'hybrid':
-            X1, G1, B1, E1, E2 = GDIIS(Xs, Gs, Bs, n_step, Es)
+            X1, G1, B1, E1, E2 = GDIIS(Xs, Gs, Bs, n_step, Es, state1 = state1, state2 = state2, mult1 = mult1, mult2 = mult2)
         elif flag == 'gediis':
             X1, G1, B1, E1, E2 = GDIIS(Xs, Gs, Bs, n_step, Es, flag='gediis')
         if len(Xs) > 3:
@@ -813,45 +901,47 @@ def main():
     print('****KST48 PROGRAM: a powerful tool for MECP locating****')
     print('****By Yumiao Ma, BSJ Institute, 2022/01/09****\n')
     _, inp = sys.argv
-    os.system('mkdir JOBS')
-    nprocs, mem, charge, mult1, mult2, method, runMode = inputParser(
+    nprocs, mem, charge, mult1, mult2, method, runMode, state1, state2 = inputParser(
         sys.argv[1])
-    header_1, header_2 = buildInitJob(
-        nprocs, mem, charge, mult1, mult2, method, PROG, runMode)
-    print(f'Note: This program is now running on {runMode} mode')
-    if runMode == 'noread':
-        DELETE_GBW = True
-
-    # the preparation phase: run single points or stability calcs to obtain the wavefunction
-    print('****Initialization: running the first single point calculations according to the mode****')
-    if runMode != 'read':
+    print(runMode)
+    if  PROG != 'bagel':
+        header_1, header_2 = buildInitJob(
+            nprocs, mem, charge, mult1, mult2, method, PROG, runMode)
+        print(f'Note: This program is now running on {runMode} mode')
+        if runMode == 'noread':
+            DELETE_GBW = True
+    if runMode != 'read' and PROG != 'bagel':
+        # the preparation phase: run single points or stability calcs to obtain the wavefunction
+        print('****Initialization: running the first single point calculations according to the mode****')
         runPrePoint(header_1, header_2, PROG, runMode)
         if runMode == 'stable' or runMode == 'inter_read':
             if PROG == 'orca':
                 print('In an RHF calculation in ORCA, it will not restart automatically if an unstability is found. \
-	Remember to write UKS when you are handling singlet state! ')
+    Remember to write UKS when you are handling singlet state! ')
                 print('RI is unsupported for stability analysis. It is recommended to MANUALLY obtain the correct wavefunction, \
-	and then use the read model of KST48, rather than the stable mode, in order to use RI.')
+    and then use the read model of KST48, rather than the stable mode, in order to use RI.')
                 os.system(f'cp JOBS/pre_A.gbw JOBS/a.gbw')
                 os.system(f'cp JOBS/pre_B.gbw JOBS/b.gbw')
             runMode= 'read'
 
     # the main loop
     scan_step = 1
+
     if runMode in ['read', 'normal', 'noread']:
-        method = modifyMETHOD(PROG, method, runMode)
-        print('****Initialization OK, now entering main loop****')
-        print('****Before that, please check the keywords list****')
-        HEADER_A, HEADER_B = buildInitJob(
-            nprocs, mem, charge, mult1, mult2, method, PROG, runMode, Td1=TD1, Td2=TD2)
-        print(f'Header A:\n {HEADER_A}')
-        print(f'Header B:\n {HEADER_B}')
-        print('****If everything is OK, then go to the main loop****\n')
+        if PROG != 'bagel':
+            method = modifyMETHOD(PROG, method, runMode)
+            print('****Initialization OK, now entering main loop****')
+            print('****Before that, please check the keywords list****')
+            HEADER_A, HEADER_B = buildInitJob(
+                nprocs, mem, charge, mult1, mult2, method, PROG, runMode, Td1=TD1, Td2=TD2)
+            print(f'Header A:\n {HEADER_A}')
+            print(f'Header B:\n {HEADER_B}')
+            print('****If everything is OK, then go to the main loop****\n')
         if SCANS == []:  # normal opt without scan
-            runEachStep(GEOM, 0, HEADER_A, HEADER_B, TAIL1, TAIL2)
+            runEachStep(GEOM, 0, HEADER_A, HEADER_B, TAIL1, TAIL2, BAGELMODEL, mult1, mult2, state1, state2)
             # run JOBS/0_A and 0_B, to obtain the first gradient
             GEOM, force, E = readForceAndGeom('JOBS/0_A.log')
-            conv_step, GEOM = runOpt(GEOM, flag='hybrid')
+            conv_step, GEOM = runOpt(GEOM, flag='hybrid', state1 = state1, state2 = state2, mult1 = mult1, mult2 = mult2)
             print('****Congrats! MECP has converged****')
             if PROG == 'gaussian':
                 os.system(f'cp JOBS/{conv_step}_A.gjf .')
@@ -887,9 +977,9 @@ def main():
                     print(f'constraints after pop and append')
                     print(CONSTRAINTS)
                     print(f'****Scan Cycle {i:4f}_{j:4f}****')
-                    runEachStep(GEOM, 0, HEADER_A, HEADER_B, TAIL1, TAIL2)
+                    runEachStep(GEOM, 0, HEADER_A, HEADER_B, TAIL1, TAIL2, BAGELMODEL, mult1, mult2, state1, state2)
                     GEOM, force, E = readForceAndGeom('JOBS/0_A.log')
-                    conv_step, GEOM = runOpt(GEOM, flag='hybrid')
+                    conv_step, GEOM = runOpt(GEOM, flag='hybrid', state1 = state1, state2 = state2, mult1 = mult1, mult2 = mult2)
                     print('****Congrats! MECP has converged****\n')
                     if PROG == 'gaussian':
                         os.system(f'cp JOBS/{conv_step}_A.gjf {i:4f}_{j:4f}.gjf')

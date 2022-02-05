@@ -1,0 +1,33 @@
+ { "bagel" : [
+
+ {
+   "title" : "molecule",
+   "basis" : "svp",
+   "df_basis" : "svp-jkfit",
+   "angstrom" : true,
+   *geometry*
+ },
+{
+  "title":"hf"
+},
+{
+    "title": "force",
+    "target": 0,
+    "method":  [{
+     "title" : "casscf",
+     "charge" : 0,
+     "nspin": 0,
+     "maxiter": 200,
+     "restart_cas": "true",
+     "nact" : 6,
+     "nstate": 2,
+     "nclosed" : 110,
+     "active" : [102,104,114,115,116,117]
+   }]
+ },
+{
+  "title" : "print",
+  "file" : "orbitals.molden",
+  "orbitals" : true
+}
+]}

@@ -86,8 +86,19 @@ There are several modes you can choose:
 5. noread
   In normal mode, each step in the optimization reads the wavefunction from the previous step. In noread mode, no wavefunction is read.
 
+# BAGEL Support
+Since Feb. 2022, interface to BAGEL has been added to KST48. In order to invoke BAGEL, you need to set three options in the input file:
+```
+program = bagel  
+bagel_comm = mpirun -np 36 /opt/bagel/bin/BAGEL
+bagel_model = model.inp 
+state1 = 0 #only set it for the multireference calculation using BAGEL
+state2 = 1 #only set it for the multireference calculation using BAGEL
+```
+As you see, now a input template (here named model.inp) is required. Necessary keywords for a force calculation in BAGEL should be properly set in this file, and leave the geometry part as *geometry*. Then KST48 will automatically change the spin multiplicity and "target" option according to your mult1, mult2, state1 and state2. An example model.inp is attached along with the code (example_bagel_model_file.inp).
+
 # Citation
-Any use of this code should cite this Github Page (https://github.com/RimoAccelerator/KST48/). Information should be included is listed as the follow:
+Any use of this code MUST cite this Github Page (https://github.com/RimoAccelerator/KST48/). Information should be included is listed as the follow:
 
 KST48, https://github.com/RimoAccelerator/KST48 Author: Yumiao Ma (BSJ Institute). accessed by ...
 
@@ -96,5 +107,3 @@ The citation will be updated once KST48 is published in a journal or as preprint
 # Bug Report
 You are welcomed to report any bug or problems to ymma@bsj-institute.top.
 
-# TODO List
-In the next version of KST48, the interfaces to BAGEL and xtb will be added.

@@ -21,10 +21,15 @@ max_step_size = 0.1
 reduced_factor = 0.5 # the gdiis stepsize will be reduced by this factor when rms_gradient is close to converge
 
 # This subset controls which program you are using, and how to call them
-program = gaussian  #gaussian or orca
+program = bagel  #gaussian, orca, xtb, bagel
 gau_comm = g16
 orca_comm = /opt/orca5/orca
 xtb_comm = xtb
+bagel_comm = mpirun -np 36 /opt/bagel/bin/BAGEL
+bagel_model = model.inp
+
+state1 = 0 #only set it for the multireference calculation using BAGEL
+state2 = 1 #only set it for the multireference calculation using BAGEL
 
 #Between *geom and *, write the cartesian coordinate of your initial geometry (in angstrom)
 *geom

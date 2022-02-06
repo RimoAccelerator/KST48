@@ -98,9 +98,11 @@ state2 = 1 #only set it for the multireference calculation using BAGEL
 As you see, now a input template (here named model.inp) is required. Necessary keywords for a force calculation in BAGEL should be properly set in this file, and leave the geometry part as *geometry*. Then KST48 will automatically change the spin multiplicity and "target" option according to your mult1, mult2, state1 and state2. An example model.inp is attached along with the code (example_bagel_model_file.inp).
 
 # Citation
-Any use of this code MUST cite this Github Page (https://github.com/RimoAccelerator/KST48/). Information should be included is listed as the follow:
+Any use of this code MUST cite this Github Page (https://github.com/RimoAccelerator/KST48/) and the first article using KST48. The citation is listed as the following:
 
-KST48, https://github.com/RimoAccelerator/KST48 Author: Yumiao Ma (BSJ Institute). accessed by ...
+1. Yumiao Ma. Formal Pericyclic-Coupled Electron Transfer: I. Stepwise Formal Diels-Alder Cycloaddition Enabled by Addition-Coupled Electron Transfer. ChemRxiv 2022. DOI: 10.26434/chemrxiv-2022-zt155.
+
+2. Yumiao Ma.  KST48: A Powerful Tool for MECP location. https://github.com/RimoAccelerator/KST48, accessed on xxxx.xx.xx
 
 The citation will be updated once KST48 is published in a journal or as preprint.
 

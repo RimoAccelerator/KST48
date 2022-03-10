@@ -1,10 +1,10 @@
-# KST48: A Powerful Tool for MECP location
+# KST48: A Powerful Tool for MECP locating
 
 KST48 is a purely-python program to locate Minimum Energy Crossing Points (MECPs), based on the searching algorithm by Bearpark, Robb and Schlegal in 1994 (Chemical physics letters, **1994**, 223(3): 269-274.).  An early implement of this algorithm is Harvey's pioneering work in 1998 (Theoretical Chemistry Accounts, **1998**, 99(2): 95-99.), which remains the most popular program to look for MECPs. Harvey's Fortran-based MECP program works in combination with Gaussian: by invoking Gaussian to calculate the forces and energies of the two states, a BFGS minimization algorithm was performed and gives an MECP starting from the input geometry.
 
-KST48 provides a much more user-friendly and extensible solution for MECP location, with a much more simplified preparation procedure. The optimization is based on the GDIIS algorithm, and is generally as effective. In addition to the location of MECPs between different spin states by ground-state DFT methods, as implemented in Harvey's program, KST48 also supports the crossing between excited states with TD-DFT methods, or any other situations where the gradient can be read from a standard quantum chemical program.
+KST48 provides a much more user-friendly and extensible solution for MECP locating, with a much more simplified preparation procedure. The optimization is based on the GDIIS algorithm, and is generally as effective. In addition to the locating of MECPs between different spin states by ground-state DFT methods, as implemented in Harvey's program, KST48 also supports the crossing between excited states with TD-DFT methods, or any other situations where the gradient can be read from a standard quantum chemical program.
 
-In addition to the location of MECP without any geometrical constrains, KST48 supports constrained optimization of bond lengths or angles, as well as the 1D- or 2D- scanning in the 3N-7 dimension of space with E1=E2 satisfied.
+In addition to the locating of MECP without any geometrical constrains, KST48 supports constrained optimization of bond lengths or angles, as well as the 1D- or 2D- scanning in the 3N-7 dimension of space with E1=E2 satisfied.
 
 ![logo](https://github.com/RimoAccelerator/KST48/blob/main/logo_KST48.png)
 
@@ -102,7 +102,7 @@ Any use of this code MUST cite this Github Page (https://github.com/RimoAccelera
 
 1. Yumiao Ma. Formal Pericyclic-Coupled Electron Transfer: I. Stepwise Formal Diels-Alder Cycloaddition Enabled by Addition-Coupled Electron Transfer. ChemRxiv 2022. DOI: 10.26434/chemrxiv-2022-zt155.
 
-2. Yumiao Ma.  KST48: A Powerful Tool for MECP location. https://github.com/RimoAccelerator/KST48, accessed on xxxx.xx.xx
+2. Yumiao Ma.  KST48: A Powerful Tool for MECP locating. https://github.com/RimoAccelerator/KST48, accessed on xxxx.xx.xx
 
 The citation will be updated once KST48 is published in a journal or as preprint.
 

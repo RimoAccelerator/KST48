@@ -10,9 +10,11 @@ In addition to the locating of MECP without any geometrical constrains, KST48 su
 
 # Requirements
 Python 3
+
 Numpy
-(KST48 is written with Numpy 1.19.3. However, it only ultilizes the most basic features of Python and Numpy, and should be compatible with any popular versions)G
-A quantum chemical program (currently supported are Gaussian and ORCA)
+(KST48 is written with Numpy 1.19.3. However, it only ultilizes the most basic features of Python and Numpy, and should be compatible with any popular versions)
+
+A quantum chemical program (currently supported are Gaussian, BAGEL and ORCA)
 
 # Usage
 1. Put kst48.py in any folder you want, together with a folder names JOBS. The task jobs will be placed here.

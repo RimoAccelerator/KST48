@@ -310,7 +310,7 @@ def readForceAndGeomForGaussian(path):
                 E = float(archivePart.split('MP2=')[1].split('=')[0])
             elif isForce and (re.match("\\s*[0-9]+\\s*[0-9]+\\s*\\-*[0-9]+", l) is not None):
                 forceArr.extend(l.split()[2:])
-            elif isGeom and (re.match("\\s*[0-9]+\\s*[0-9]+\\s*[0-9]+\\s*\\-*[0-9]+", l) is not None):
+            elif isGeom and (re.match("\\s*[0-9]+\\s+[0-9]+\\s*[0-9]+\\s*\\-*[0-9]+", l) is not None):
                 geomArr.extend(l.split()[3:])
     geomArr = [float(i) for i in geomArr]
     # forceArr = [float(i)/0.529 for i in forceArr]

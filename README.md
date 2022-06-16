@@ -99,6 +99,21 @@ state2 = 1 #only set it for the multireference calculation using BAGEL
 ```
 As you see, now a input template (here named model.inp) is required. Necessary keywords for a force calculation in BAGEL should be properly set in this file, and leave the geometry part as *geometry*. Then KST48 will automatically change the spin multiplicity and "target" option according to your mult1, mult2, state1 and state2. An example model.inp is attached along with the code (example_bagel_model_file.inp).
 
+# Structure Interpolation
+Since Jun. 2022, an **experimental** feature has been added to do an interpolation between two structures. In some cases, this could aid you on finding a good guess for the MECP between two structures. By using this feature, set the "\*LST1" and "\*LST2" part in the input file. Put the geometries like this:
+```
+*lst1
+ C                 -2.05168000   -3.89619700   -2.03479500
+...
+*
+*lst2
+ C                 -4.08538500    4.08668300   -0.76532000
+...
+*
+```
+Once "lst" part is detected, KST48 will ask you how many intermediate structures you are going to use for interpolation. The two geometries will be aligned, and the linear interpolation will be performed to generate several intermediate structures between lst1 and lst2. At present, only Gaussian is supported. Once the intermediate structures are approved, KST48 will invoke Gaussian to calculate the energies of both states for each structure, and give a list of energies as the output. You can use the one with minimal A-B energy difference as an initial guess for crossing point locating.
+
+
 # Citation
 Any use of this code MUST cite this Github Page (https://github.com/RimoAccelerator/KST48/) and the first article using KST48. The citation is listed as the following:
 

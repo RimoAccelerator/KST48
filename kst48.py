@@ -981,7 +981,7 @@ def main():
         print(f'Note: This program is now running on {runMode} mode')
         if runMode == 'noread':
             DELETE_GBW = True
-    if LST1 != []:
+    if LST1.size > 0:
         print('Now you are going to do an LST interpolation between two geometries LST1 and LST2 \
             in your input file. Please input the number of points:')
         numPoints = int(input())

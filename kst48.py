@@ -581,7 +581,7 @@ def writeGjf(Geom, Header, Tail, Name):
     f.write('\n')
     for i in range(NUM_ATOM):
         f.write('{ele}  {x:.8f}  {y:.8f}  {z:.8f}'.format(
-            ele=LIST_ELEMENT[i], x=Geom[0, i * 3], y=Geom[0, i * 3 + 1], z=Geom[0, i * 3 + 2]))
+            ele=LIST_ELEMENT[i], x=float(Geom[0, i * 3]), y=float(Geom[0, i * 3 + 1]), z=float(Geom[0, i * 3 + 2])))
         f.write('\n')
     f.write('\n')
     f.write(Tail)
@@ -595,7 +595,7 @@ def writeORCA(Geom, Header, Tail, Name):
     f.write('\n')
     for i in range(NUM_ATOM):
         f.write('{ele}  {x}  {y}  {z}'.format(
-            ele=LIST_ELEMENT[i], x=Geom[0, i * 3], y=Geom[0, i * 3 + 1], z=Geom[0, i * 3 + 2]))
+            ele=LIST_ELEMENT[i], x=float(Geom[0, i * 3]), y=float(Geom[0, i * 3 + 1]), z=float(Geom[0, i * 3 + 2])))
         f.write('\n')
     f.write('*\n')
     f.write(Tail)

@@ -311,7 +311,7 @@ def readForceAndGeomForGaussian(path):
         for l in f.readlines():
             if 'Input orientation' in l:
                 isGeom = True
-            elif 'Distance matrix' in l:
+            elif 'Distance matrix' in l or 'Rotational constants' in l:
                 isGeom = False
             elif 'Forces (Hartrees/Bohr)' in l:
                 isForce = True

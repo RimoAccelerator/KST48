@@ -22,6 +22,8 @@ TAIL2 = ''
 CONSTRAINTS = []
 SCANS = []
 GEOM = []
+LST1 = []
+LST2 = []
 
 # constraints = [['R',1,2,1.0]]
 # constraints = [['A',2,1,3,90],['R',1,2,1.2],['R',1,3,1.2]]
@@ -141,6 +143,8 @@ def geom2Json(Elements, Geom):
 
 def inputParser(Path):
     global GEOM
+    global LST2
+    global LST1
     global LIST_ELEMENT
     global NUM_ATOM
     global PROG
@@ -159,6 +163,8 @@ def inputParser(Path):
     runMode = 'normal'
     with open(Path) as f:
         isGEOM = False
+        isLST1 = False
+        isLST2 = False
         isTAIL1 = False
         isTAIL2 = False
         isConst = False
@@ -167,10 +173,18 @@ def inputParser(Path):
             l = l.lower().strip()
             if '#' in l:
                 l = l.split('#')[0]
-            if '*geom' in l:
+            elif '*geom' in l:
                 isGEOM = True
+            if '*lst1' in l:
+                isLST1 = True
+            if '*lst1' in l:
+                isLST2 = True
             elif l == '*' and isGEOM:
                 isGEOM = False
+            elif l == '*' and isLST1:
+                isLST1 = False
+            elif l == '*' and isLST2:
+                isLST2 = False
             elif '*tail1' in l:
                 isTAIL1 = True
             elif '*tail2' in l:
@@ -183,10 +197,16 @@ def inputParser(Path):
                 isConst = True
             elif l == '*' and isConst:
                 isConst = False
-            elif isGEOM and (re.match("\\s*\\S+\\s*\\-*[0-9]+", l)):
+            elif isGEOM and (re.match("\\s*\\S+\\s+\\-*[0-9]+", l)):
                 GEOM.extend(l.split()[1:])
                 LIST_ELEMENT.append(l.split()[0])
                 NUM_ATOM += 1
+            elif isLST1 and (re.match("\\s*\\S+\\s+\\-*[0-9]+", l)):
+                LST1.extend([ float(i) for i in l.split()[1:] ])
+                LIST_ELEMENT.append(l.split()[0])
+                NUM_ATOM += 1
+            elif isLST2 and (re.match("\\s*\\S+\\s+\\-*[0-9]+", l)):
+                LST2.extend([ float(i) for i in l.split()[1:] ])
             elif isTAIL1:
                 TAIL1 += l
                 TAIL1 += '\n'
@@ -259,6 +279,8 @@ def inputParser(Path):
                 elif 'mode' in l:
                     runMode = parameter
     GEOM = numpy.mat(GEOM)
+    LST1 = numpy.mat(LST1)
+    LST2 = numpy.mat(LST2)
     PROG_COMM = command[PROG]
     return [nprocs, mem, charge, mult1, mult2, method, runMode, state1, state2]
 
@@ -289,7 +311,7 @@ def readForceAndGeomForGaussian(path):
         for l in f.readlines():
             if 'Input orientation' in l:
                 isGeom = True
-            elif 'Distance matrix' in l:
+            elif 'Distance matrix' in l or 'Rotational constants' in l:
                 isGeom = False
             elif 'Forces (Hartrees/Bohr)' in l:
                 isForce = True
@@ -308,7 +330,7 @@ def readForceAndGeomForGaussian(path):
                 archivePart += l.upper().strip()
                 isArchive = False
                 E = float(archivePart.split('MP2=')[1].split('=')[0])
-            elif isForce and (re.match("\\s*[0-9]+\\s*[0-9]+\\s*\\-*[0-9]+", l) is not None):
+            elif isForce and (re.match("\\s*[0-9]+\\s+[0-9]+\\s*\\-*[0-9]+", l) is not None):
                 forceArr.extend(l.split()[2:])
             elif isGeom and (re.match("\\s*[0-9]+\\s+[0-9]+\\s*[0-9]+\\s*\\-*[0-9]+", l) is not None):
                 geomArr.extend(l.split()[3:])
@@ -564,8 +586,8 @@ def writeGjf(Geom, Header, Tail, Name):
     f.write(Header)
     f.write('\n')
     for i in range(NUM_ATOM):
-        f.write('{ele}  {x}  {y}  {z}'.format(
-            ele=LIST_ELEMENT[i], x=Geom[0, i * 3], y=Geom[0, i * 3 + 1], z=Geom[0, i * 3 + 2]))
+        f.write('{ele}  {x:.8f}  {y:.8f}  {z:.8f}'.format(
+            ele=LIST_ELEMENT[i], x=float(Geom[0, i * 3]), y=float(Geom[0, i * 3 + 1]), z=float(Geom[0, i * 3 + 2])))
         f.write('\n')
     f.write('\n')
     f.write(Tail)
@@ -579,7 +601,7 @@ def writeORCA(Geom, Header, Tail, Name):
     f.write('\n')
     for i in range(NUM_ATOM):
         f.write('{ele}  {x}  {y}  {z}'.format(
-            ele=LIST_ELEMENT[i], x=Geom[0, i * 3], y=Geom[0, i * 3 + 1], z=Geom[0, i * 3 + 2]))
+            ele=LIST_ELEMENT[i], x=float(Geom[0, i * 3]), y=float(Geom[0, i * 3 + 1]), z=float(Geom[0, i * 3 + 2])))
         f.write('\n')
     f.write('*\n')
     f.write(Tail)
@@ -897,6 +919,55 @@ def runOpt(X0, flag='hybrid', state1 = 0, state2 = 0, mult1 = 0, mult2 = 0):
         G0 = G1
         B0 = B1
 
+def doLST(num_points, header1, header2):
+    print('This is an experimental function and only Gaussian is supported.')
+    if len(LST1) != len(LST2):
+        raise Exception('Two LST geometries does not match!')
+    xn = numpy.zeros([NUM_ATOM, 3])
+    yn = numpy.zeros([NUM_ATOM, 3])
+    for i in range(NUM_ATOM):
+        xn[i, 0:] =LST1[0, i*3 : i*3+3]
+        yn[i, 0:] =LST2[0, i*3 : i*3+3]
+    #Kabsch algorithm in 10.1107/S0567739476001873 for alignment
+    R_matrix = yn.T @ xn
+    RT_R = R_matrix.T @ R_matrix
+    mius, A_matrix = numpy.linalg.eig(RT_R)
+    mius = numpy.real(mius)
+    mius = numpy.diag(mius)
+    for i in range(3):
+        mius[i, i] = 1/math.sqrt(mius[i, i])
+    B_matrix = (mius @ (R_matrix @ A_matrix).T)
+    U_matrix = B_matrix.T @ A_matrix
+    print(U_matrix)
+    xn = U_matrix @ xn.T
+    for i in range(NUM_ATOM):
+        LST1[0, i*3 : i*3+3] = xn.T[i, 0:]
+    geoInterval = (LST2 - LST1) / (num_points + 1)
+    geoms = []
+    for i in range(num_points + 1):
+        geoms.extend(LST1 + (i + 0) * geoInterval)
+    num = 0
+    for i in geoms:
+        num += 1
+        writeGjf(i, header1, '', f'JOBS/{num}_A.gjf')
+        writeGjf(i, header2, '', f'JOBS/{num}_B.gjf')
+    print('The geometries of the intermediate structures have been generated in JOBS. Do not forget to check if they are correct.')
+    print('Do you want to continue running these files?')
+    if input() != 'y':
+        exit()
+    E_A, E_B = [[], []]
+    for i in range(num):
+        os.system(f'{PROG_COMM} JOBS/{i+1}_A.gjf')
+        rubbish1, rubbish2, e1 = readForceAndGeomForGaussian(f'JOBS/{i+1}_A.log')
+        os.system(f'{PROG_COMM} JOBS/{i+1}_B.gjf')
+        rubbish1, rubbish2, e2 = readForceAndGeomForGaussian(f'JOBS/{i+1}_B.log')
+        E_A.append(float(e1))
+        E_B.append(float(e2))
+    for i in range(num):
+        print(f'EA_{i+1} = {E_A[i]}')
+        print(f'EB_{i+1} = {E_B[i]}')
+        print(f'DE_{i+1} = {E_A[i] - E_B[i]}')
+    exit()
 
 def main():
     global HEADER_A
@@ -916,6 +987,12 @@ def main():
         print(f'Note: This program is now running on {runMode} mode')
         if runMode == 'noread':
             DELETE_GBW = True
+    if LST1.size > 0:
+        print('Now you are going to do an LST interpolation between two geometries LST1 and LST2 \
+            in your input file. Please input the number of points:')
+        numPoints = int(input())
+        doLST(numPoints, header_1, header_2)
+
     if runMode != 'read' and PROG != 'bagel':
         # the preparation phase: run single points or stability calcs to obtain the wavefunction
         print('****Initialization: running the first single point calculations according to the mode****')
@@ -999,6 +1076,7 @@ def main():
                     os.system(f'cp JOBS/{conv_step}_B.log {i:4f}_{j:4f}.log')
                     CONSTRAINTS.pop(-1)
                 CONSTRAINTS.pop(-1)
+
 
 
 main()

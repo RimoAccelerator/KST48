@@ -115,9 +115,9 @@ Once "lst" part is detected, KST48 will ask you how many intermediate structures
 
 
 # Citation
-Any use of this code MUST cite this Github Page (https://github.com/RimoAccelerator/KST48/) and the first article using KST48. The citation is listed as the following:
+Any use of this code MUST cite this Github Page (https://github.com/RimoAccelerator/KST48/), and it is encouraged to cite the author's first article using KST48. The citation is listed as the following:
 
-1. Yumiao Ma. Formal Pericyclic-Coupled Electron Transfer: I. Stepwise Formal Diels-Alder Cycloaddition Enabled by Addition-Coupled Electron Transfer. ChemRxiv 2022. DOI: 10.26434/chemrxiv-2022-zt155.
+1. Y. Ma, A. A. Hussein, ChemistrySelect 2022, 7, e202202354.
 
 2. Yumiao Ma.  KST48: A Powerful Tool for MECP locating. https://github.com/RimoAccelerator/KST48, accessed on xxxx.xx.xx
 

@@ -49,7 +49,10 @@ def buildHeader(
         Td1='',
         Td2=''):
     header_1, header_2 = ['', '']
-    if Prog == 'gaussian':
+    if ISONIOM:
+        header_1 = f'%chk=a.chk\n%nprocs={NProcs} \n%mem={Mem} \n# {Method} {Td1} nosymm\n\n Title Card \n\n{CHARGEANDMULTFORONIOM1}'
+        header_2 = f'%chk=b.chk\n%nprocs={NProcs} \n%mem={Mem} \n# {Method} {Td2} nosymm\n\n Title Card \n\n{CHARGEANDMULTFORONIOM2}'
+    elif Prog == 'gaussian':
         header_1 = f'%chk=a.chk\n%nprocs={NProcs} \n%mem={Mem} \n# {Method} {Td1} nosymm\n\n Title Card \n\n{Charge} {Mult1}'
         header_2 = f'%chk=b.chk\n%nprocs={NProcs} \n%mem={Mem} \n# {Method} {Td2} nosymm\n\n Title Card \n\n{Charge} {Mult2}'
     elif Prog == 'orca':
@@ -158,9 +161,16 @@ def inputParser(Path):
     global MAX_STEPS
     global MAX_STEP_SIZE
     global BAGELMODEL 
+    global ISONIOM
+    global CHARGEANDMULTFORONIOM1
+    global CHARGEANDMULTFORONIOM2
+    global ONIOMLAYERINFO
+    global FIXEDATOMS
     charge, mult1, mult2, method, nprocs, mem, state1, state2 = ['', '', '', '', '', '', '', '']
     command = {'gau': '', 'orca': '', 'xtb': '', 'bagel': ''}
     runMode = 'normal'
+    ISONIOM = False
+    FIXEDATOMS = []
     with open(Path) as f:
         isGEOM = False
         isLST1 = False
@@ -175,6 +185,9 @@ def inputParser(Path):
                 l = l.split('#')[0]
             elif '*geom' in l:
                 isGEOM = True
+                LIST_ELEMENT = []
+                GEOM = []
+                ONIOMLAYERINFO = []
             if '*lst1' in l:
                 isLST1 = True
             if '*lst1' in l:
@@ -198,9 +211,17 @@ def inputParser(Path):
             elif l == '*' and isConst:
                 isConst = False
             elif isGEOM and (re.match("\\s*\\S+\\s+\\-*[0-9]+", l)):
-                GEOM.extend(l.split()[1:])
-                LIST_ELEMENT.append(l.split()[0])
+                l_splitted = l.split()
+                GEOM.extend(l_splitted[1:4])
+                LIST_ELEMENT.append(l_splitted[0])
                 NUM_ATOM += 1
+                if len(l_splitted) > 4:
+                    ONIOMLAYERINFO.append(' '.join(l_splitted[4:]))
+            elif isGEOM and '@' in l: #2023 Oct: reading geometry from a Gaussian output file
+                geomArr, elementArr = externalGeomReader(l_bk.split('@')[1])
+                GEOM = geomArr[:]
+                LIST_ELEMENT = elementArr[:]
+                NUM_ATOM = len(LIST_ELEMENT)
             elif isLST1 and (re.match("\\s*\\S+\\s+\\-*[0-9]+", l)):
                 LST1.extend([ float(i) for i in l.split()[1:] ])
                 LIST_ELEMENT.append(l.split()[0])
@@ -229,6 +250,12 @@ def inputParser(Path):
                     mem = parameter
                 elif 'nprocs' in l:
                     nprocs = parameter
+                elif 'isoniom' in l and parameter == 'true':
+                    ISONIOM = True
+                elif 'chargeandmultforoniom1' in l:
+                    CHARGEANDMULTFORONIOM1 = parameter
+                elif 'chargeandmultforoniom2' in l:
+                    CHARGEANDMULTFORONIOM2 = parameter
                 elif 'charge' in l:
                     charge = parameter
                 elif 'method' in l:
@@ -278,6 +305,14 @@ def inputParser(Path):
                     print(f'You are using the BAGEL model using file {BAGELMODEL}. Please ensure it is correct.')
                 elif 'mode' in l:
                     runMode = parameter
+                elif 'fixedatoms' in l:
+                    for atomGroup in parameter.split(','):
+                        if '-' in atomGroup:
+                            for i in range(int(atomGroup.split('-')[0]) - 1, int(atomGroup.split('-')[1])):
+                                FIXEDATOMS.append(i)
+                        else:
+                            FIXEDATOMS.append(int(atomGroup) - 1)
+                
     GEOM = numpy.mat(GEOM)
     LST1 = numpy.mat(LST1)
     LST2 = numpy.mat(LST2)
@@ -311,6 +346,7 @@ def readForceAndGeomForGaussian(path):
         for l in f.readlines():
             if 'Input orientation' in l:
                 isGeom = True
+                geomArr = []
             elif 'Distance matrix' in l or 'Rotational constants' in l:
                 isGeom = False
             elif 'Forces (Hartrees/Bohr)' in l:
@@ -357,6 +393,7 @@ def readForceAndGeomForORCA(path):
         for l in f.readlines():
             if 'The atomic numbers and current coordinates in Bohr' in l:
                 isGeom = True
+                geomArr = []
             elif '#' in l and len(geomArr) > 3:
                 isGeom = False
             elif 'The current gradient' in l:
@@ -400,6 +437,7 @@ def readForceAndGeomForBAGEL(path, state):
         for l in f.readlines():
             if '*** Geometry ***' in l:
                 isGeom = True
+                geomArr = []
             elif 'Number of auxiliary basis functions' in l:
                 isGeom = False
             elif 'Nuclear energy gradient' in l:
@@ -411,6 +449,9 @@ def readForceAndGeomForBAGEL(path, state):
             elif isEnergy and (re.match("\s*[0-9]+\s*[0-9]+\s*\*\s*\-*[0-9]+", l) is not None):
                 if int(l.split()[1]) == int(state):
                     E = float(l.split()[-3])
+            elif 'MS-CASPT2 energy : state' in l:
+                if int(l.split('state')[1].split()[0]) == int(state):
+                    E = float(l.split('state')[1].split()[1])
             elif isGeom and '{ "atom" :' in l:
                 #{ "atom" : "C", "xyz" : [      7.990821,      1.210697,      3.574653 ] },
                 thisAtom = l.split('[')[-1].split(']')[0].split(',')
@@ -424,19 +465,83 @@ def readForceAndGeomForBAGEL(path, state):
     forceArr = addConstLag(geomArr, forceArr, CONSTRAINTS)
     if len(geomArr) == NUM_ATOM * 3:
         geomArr.extend(LAMBDAS)
-    print(f'Now reading energy for the state {state}, it is {E}')
+    #print(f'Now reading energy for the state {state}, it is {E}')
     return [geomArr, forceArr, E]
 
 def readForceAndGeom(path, state = 0):
+    forceArr = []
+    geomArr = []
+    E = 0
     if PROG == 'gaussian':
-        return readForceAndGeomForGaussian(path)
+        geomArr, forceArr, E = readForceAndGeomForGaussian(path)
     elif PROG == 'orca':
-        return readForceAndGeomForORCA(path)
+        geomArr, forceArr, E = readForceAndGeomForORCA(path)
     elif PROG == 'bagel':
-        return readForceAndGeomForBAGEL(path, state)
+        geomArr, forceArr, E= readForceAndGeomForBAGEL(path, state)
     else:
         raise Exception('Unsupported program!')
+    for i in FIXEDATOMS:
+        forceArr[i * 3 + 0] = 0
+        forceArr[i * 3 + 1] = 0
+        forceArr[i * 3 + 2] = 0
+    return [geomArr, forceArr, E]
 
+def readGeomFromXyz(path):
+    geomArr = []
+    tempElementArr = []
+    with open(path) as f:
+        for l in f.readlines():
+            if re.match("\s*\S+\s+\-*[0-9]*\.*[0-9]+\s+\-*[0-9]*\.*[0-9]+\s+\-*[0-9]*\.*[0-9]+\s*", l) is not None:
+                geomArr.extend(l.split()[1:])
+                tempElementArr.append(l.split()[0])
+            elif l.strip().isdigit(): # update the geometry and elements for xyz trajectories
+                geomArr = []
+                tempElementArr = [] 
+    geomArr = [float(i) for i in geomArr]
+    return [geomArr, tempElementArr]
+
+def readGeomFromGjf(path):
+    geomArr = []
+    tempElementArr = []
+    with open(path) as f:
+        for l in f.readlines():
+            if re.match("\s*\S+\s+\-*[0-9]*\.*[0-9]+\s+\-*[0-9]*\.*[0-9]+\s+\-*[0-9]*\.*[0-9]+\s*", l) is not None:
+                geomArr.extend(l.split()[1:])
+                tempElementArr.append(l.split()[0])
+    geomArr = [float(i) for i in geomArr]
+    return [geomArr, tempElementArr]
+
+def readGeomFromLog(path):
+    geomArr = []
+    tempElementArr = []
+    with open(path) as f:
+        isForce = False
+        isGeom = False
+        E = 0
+        archivePart = ''
+        isArchive = False
+        for l in f.readlines():
+            if 'Input orientation' in l:
+                isGeom = True
+                geomArr = []
+                tempElementArr = []
+            elif 'Distance matrix' in l or 'Rotational constants' in l:
+                isGeom = False
+            elif isGeom and (re.match("\\s*[0-9]+\\s+[0-9]+\\s*[0-9]+\\s*\\-*[0-9]+", l) is not None):
+                geomArr.extend(l.split()[3:])
+                tempElementArr.append(l.split()[1])
+    geomArr = [float(i) for i in geomArr]
+    return [geomArr, tempElementArr]
+
+def externalGeomReader(path):
+    if '.log' in path:
+        return readGeomFromLog(path)
+    elif '.xyz' in path:
+        return readGeomFromXyz(path)
+    elif '.gjf' in path:
+        return readGeomFromGjf(path)
+    else:
+        raise Exception('Unsupported external geometry file!')
 
 # read constraints and add it to the gradients according to a harmonic term; which is deprecated because of the slow convergence
 # constr list:[['r', 1 , 2, 1.5], ['a', 1, 2, 3]], starting from 1
@@ -585,10 +690,17 @@ def writeGjf(Geom, Header, Tail, Name):
     f = open(Name, 'w+')
     f.write(Header)
     f.write('\n')
-    for i in range(NUM_ATOM):
-        f.write('{ele}  {x:.8f}  {y:.8f}  {z:.8f}'.format(
-            ele=LIST_ELEMENT[i], x=float(Geom[0, i * 3]), y=float(Geom[0, i * 3 + 1]), z=float(Geom[0, i * 3 + 2])))
-        f.write('\n')
+    if ISONIOM:
+        for i in range(NUM_ATOM):
+            f.write('{ele}  {x:.8f}  {y:.8f}  {z:.8f}'.format(
+                ele=LIST_ELEMENT[i], x=float(Geom[0, i * 3]), y=float(Geom[0, i * 3 + 1]), z=float(Geom[0, i * 3 + 2])) 
+            + ' ' +ONIOMLAYERINFO[i])
+            f.write('\n')
+    else:
+        for i in range(NUM_ATOM):
+            f.write('{ele}  {x:.8f}  {y:.8f}  {z:.8f}'.format(
+                ele=LIST_ELEMENT[i], x=float(Geom[0, i * 3]), y=float(Geom[0, i * 3 + 1]), z=float(Geom[0, i * 3 + 2])))
+            f.write('\n')
     f.write('\n')
     f.write(Tail)
     f.write('\n')
@@ -976,11 +1088,13 @@ def main():
     global GEOM
     global CONSTRAINTS
     print('****KST48 PROGRAM: a powerful tool for MECP locating****')
-    print('****By Yumiao Ma, BSJ Institute, 2022/01/09****\n')
+    print('****By Yumiao Ma, BSJ Institute, 2023/10 Updated****\n')
+    if len(sys.argv) < 2:
+        raise Exception('No input file found. Please run the program like: python3 kst48.py your_input_file')
     _, inp = sys.argv
     nprocs, mem, charge, mult1, mult2, method, runMode, state1, state2 = inputParser(
         sys.argv[1])
-    print(runMode)
+    print(f'The current running mode is {runMode}.')
     if  PROG != 'bagel':
         header_1, header_2 = buildInitJob(
             nprocs, mem, charge, mult1, mult2, method, PROG, runMode)
@@ -1019,6 +1133,8 @@ def main():
                 nprocs, mem, charge, mult1, mult2, method, PROG, runMode, Td1=TD1, Td2=TD2)
             print(f'Header A:\n {HEADER_A}')
             print(f'Header B:\n {HEADER_B}')
+            if len(FIXEDATOMS) > 0:
+                print(f'In addition, the following atoms are fixed:\n {[i + 1 for i in FIXEDATOMS]}')
             print('****If everything is OK, then go to the main loop****\n')
         if SCANS == []:  # normal opt without scan
             runEachStep(GEOM, 0, HEADER_A, HEADER_B, TAIL1, TAIL2, BAGELMODEL, mult1, mult2, state1, state2)

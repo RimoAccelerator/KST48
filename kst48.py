@@ -50,11 +50,11 @@ def buildHeader(
         Td2=''):
     header_1, header_2 = ['', '']
     if ISONIOM:
-        header_1 = f'%chk=a.chk\n%nprocs={NProcs} \n%mem={Mem} \n# {Method} {Td1} nosymm\n\n Title Card \n\n{CHARGEANDMULTFORONIOM1}'
-        header_2 = f'%chk=b.chk\n%nprocs={NProcs} \n%mem={Mem} \n# {Method} {Td2} nosymm\n\n Title Card \n\n{CHARGEANDMULTFORONIOM2}'
+        header_1 = f'%chk=a.chk\n%nprocshared={NProcs} \n%mem={Mem} \n# {Method} {Td1} nosymm\n\n Title Card \n\n{CHARGEANDMULTFORONIOM1}'
+        header_2 = f'%chk=b.chk\n%nprocshared={NProcs} \n%mem={Mem} \n# {Method} {Td2} nosymm\n\n Title Card \n\n{CHARGEANDMULTFORONIOM2}'
     elif Prog == 'gaussian':
-        header_1 = f'%chk=a.chk\n%nprocs={NProcs} \n%mem={Mem} \n# {Method} {Td1} nosymm\n\n Title Card \n\n{Charge} {Mult1}'
-        header_2 = f'%chk=b.chk\n%nprocs={NProcs} \n%mem={Mem} \n# {Method} {Td2} nosymm\n\n Title Card \n\n{Charge} {Mult2}'
+        header_1 = f'%chk=a.chk\n%nprocshared={NProcs} \n%mem={Mem} \n# {Method} {Td1} nosymm\n\n Title Card \n\n{Charge} {Mult1}'
+        header_2 = f'%chk=b.chk\n%nprocshared={NProcs} \n%mem={Mem} \n# {Method} {Td2} nosymm\n\n Title Card \n\n{Charge} {Mult2}'
     elif Prog == 'orca':
         header_1 = f'%pal nprocs {NProcs} end\n%maxcore {Mem} \n! {Method} \n\n *xyz {Charge} {Mult1}'
         header_2 = f'%pal nprocs {NProcs} end\n%maxcore {Mem} \n! {Method} \n\n *xyz {Charge} {Mult2}'
@@ -355,6 +355,8 @@ def readForceAndGeomForGaussian(path):
                 isForce = False
             elif 'SCF DONE' in l.upper():
                 E = float(l.split('=')[1].upper().split('A.U.')[0])
+            elif 'extrapolated energy' in l.lower():
+                E = float(l.split('=')[1])
             elif 'E(TD-HF/TD-DFT)' in l.upper():
                 E = float(l.split('=')[1])
             elif MP2 and 'MP2=' in l.upper():  # read the MP2 energy in the archive part of a log file

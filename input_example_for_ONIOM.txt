@@ -1,0 +1,82 @@
+nprocs = 4
+mem = 4GB # change this into the maxcore value for orca
+method= oniom(b3lyp/em=gd3bj/sto-3g:hf/3-21g:pm7) geom=connectivity
+td1 =  # keywords for td-dft (only for gaussian; please write it in the tail part for orca)
+td2 = 
+mp2 = false #set true for mp2 or doubly hybrid calculation in gaussian
+charge = 0 #ignore this for ONIOM calculation
+mult1 = 1 #ignore this for ONIOM calculation
+mult2 = 3 #ignore this for ONIOM calculation
+mode = normal #normal; stable; read; inter_read; noread
+
+#New feature: atom fixation. Numbers start from 1. In the following example, atoms 2, 3, 5 are fixed.
+fixedAtoms = 5, 2-3 
+
+isONIOM = false # if you are using the ONIOM feature of Gaussian, set this true.
+chargeAndMultForONIOM1 = 0 1 0 1 0 1 0 1 0 1 0 1 #only useful for ONIOM calculation
+chargeAndMultForONIOM2 = 0 1 0 1 0 1 0 3 0 3 0 3 #only useful for ONIOM calculation
+
+dE_thresh = 0.000050
+rms_thresh = 0.0025 # 0.1*default
+max_dis_thresh = 0.004 # 0.1*default
+max_g_thresh = 0.0007
+rms_g_thresh = 0.0005
+max_steps = 100
+max_step_size = 0.1
+reduced_factor = 0.5 # the gdiis stepsize will be reduced by this factor when rms_gradient is close to converge
+
+program = gaussian  #gaussian, orca, xtb
+gau_comm = 'g16'
+orca_comm = '/opt/orca5/orca'
+xtb_comm = 'xtb'
+
+*geom
+ C        2.02254521   -0.36259181   -0.01365118 M H 8
+ H        2.37786899   -1.37187093   -0.01446684 M
+ H        2.37789587    0.14134325   -0.88810836 M
+ C        0.48255054   -0.36054374   -0.01015114 L H 1
+ H        0.12722676    0.64873538   -0.00933548 L
+ H        0.12322871   -0.86446478   -0.88299213 L
+ H        0.12719988   -0.86447880    0.86430604 L
+ N        2.51619296    0.32971093    1.18548551 H
+ O        2.72397867   -0.30706606    2.22615545 H
+ O        2.72401165    1.54934090    1.15437446 H
+*
+
+*tail1
+ 1 2 1.0 3 1.0 4 1.0 8 1.0
+ 2
+ 3
+ 4 5 1.0 6 1.0 7 1.0
+ 5
+ 6
+ 7
+ 8 9 1.5 10 1.5
+ 9
+ 10
+
+
+
+*
+
+*tail2
+ 1 2 1.0 3 1.0 4 1.0 8 1.0
+ 2
+ 3
+ 4 5 1.0 6 1.0 7 1.0
+ 5
+ 6
+ 7
+ 8 9 1.5 10 1.5
+ 9
+ 10
+
+
+*
+
+*constr
+#R 1 2 1.0
+#A 1 2 3 100.0
+#S R 7 9 1.5 15 0.1
+#S R 2 3 1.5 10 0.1
+*

@@ -412,7 +412,7 @@ def readForceAndGeomForORCA(path):
                 forceArr.append(l.strip())
             elif isGeom and (re.match("\\s*[0-9]+\\s*\\-*[0-9]+", l) is not None):
                 geomArr.extend(l.split()[1:])
-    path = ''.join(splittedPath[:-1]) + '.log'
+    path = ''.join(splittedPath[:-1]) + '.out'
     with open(path) as f: 
     #the engrad file does not contain right TD-DFT energy for ORCA. Read it from .log
         for l in f.readlines():

@@ -342,7 +342,7 @@ def readForceAndGeomForGaussian(path):
         isGeom = False
         E = 0
         archivePart = ''
-        isArchive = False
+        #isArchive = False
         for l in f.readlines():
             if 'Input orientation' in l:
                 isGeom = True
@@ -359,19 +359,22 @@ def readForceAndGeomForGaussian(path):
                 E = float(l.split('=')[1])
             elif 'E(TD-HF/TD-DFT)' in l.upper():
                 E = float(l.split('=')[1])
-            elif MP2 and 'MP2=' in l.upper():  # read the MP2 energy in the archive part of a log file
+            elif MP2 and '\\' in l.upper():
+            #elif MP2 and 'MP2=' in l.upper():  # read the MP2 energy in the archive part of a log file
                 archivePart += l.upper().strip()
-                isArchive = True
-            elif isArchive:
+                #isArchive = True
+            #elif isArchive:
                 # sometimes the MP2 energy may be separated by a \n. Two lines
                 # have to be combined
-                archivePart += l.upper().strip()
-                isArchive = False
-                E = float(archivePart.split('MP2=')[1].split('=')[0])
+                #archivePart += l.upper().strip()
+                #isArchive = False
+                #E = float(archivePart.split('MP2=')[1].split('=')[0])
             elif isForce and (re.match("\\s*[0-9]+\\s+[0-9]+\\s*\\-*[0-9]+", l) is not None):
                 forceArr.extend(l.split()[2:])
             elif isGeom and (re.match("\\s*[0-9]+\\s+[0-9]+\\s*[0-9]+\\s*\\-*[0-9]+", l) is not None):
                 geomArr.extend(l.split()[3:])
+    if MP2:
+        E = float(archivePart.split('MP2=')[1].split('\\')[0])
     geomArr = [float(i) for i in geomArr]
     # forceArr = [float(i)/0.529 for i in forceArr]
     forceArr = [float(i) for i in forceArr]

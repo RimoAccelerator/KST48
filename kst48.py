@@ -1154,8 +1154,9 @@ def main():
                 os.system(f'cp JOBS/{conv_step}_A.inp .')
                 os.system(f'cp JOBS/{conv_step}_B.inp .')
                 os.system(f'cp JOBS/a.gbw .; cp JOBS/b.gbw .')
-            os.system(f'cp JOBS/{conv_step}_A.log .')
-            os.system(f'cp JOBS/{conv_step}_B.log .')
+            os.system(f'cp JOBS/{conv_step}_A.out .')
+            os.system(f'cp JOBS/{conv_step}_B.out .')
+            os.system(f'cp JOBS/{conv_step}.xyz .')
         # Run PES Scan
         else:  # SCANS: [ [[r,A,B], [start, num, size] ], ... ]
             initial_cons_num = len(CONSTRAINTS)

@@ -764,8 +764,8 @@ def runEachStep(Geom, NStep, Header_A, Header_B, Tail1, Tail2, BagelModel, mult1
     elif PROG == 'orca':
         writeORCA(Geom, Header_A, Tail1, f'JOBS/{NStep}_A.inp')
         writeORCA(Geom, Header_B, Tail2, f'JOBS/{NStep}_B.inp')
-        os.system(f'{PROG_COMM} JOBS/{NStep}_B.inp > JOBS/{NStep}_B.log')
-        os.system(f'{PROG_COMM} JOBS/{NStep}_A.inp > JOBS/{NStep}_A.log')
+        os.system(f'{PROG_COMM} JOBS/{NStep}_B.inp > JOBS/{NStep}_B.out')
+        os.system(f'{PROG_COMM} JOBS/{NStep}_A.inp > JOBS/{NStep}_A.out')
         if DELETE_GBW:
             os.system(f'rm -rf JOBS/{NStep}_B.gbw')
             os.system(f'rm -rf JOBS/{NStep}_A.gbw')

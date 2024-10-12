@@ -135,7 +135,11 @@ Since Jun. 2022, an **experimental** feature has been added to do an interpolati
 Once "lst" part is detected, KST48 will ask you how many intermediate structures you are going to use for interpolation. The two geometries will be aligned, and the linear interpolation will be performed to generate several intermediate structures between lst1 and lst2. At present, only Gaussian is supported. Once the intermediate structures are approved, KST48 will invoke Gaussian to calculate the energies of both states for each structure, and give a list of energies as the output. You can use the one with minimal A-B energy difference as an initial guess for crossing point locating.
 
 # Fix-DE Method
-Since the **2024**Oct version (kst48_2024Oct.py), a new feature named "Fix-DE" has been added. It does not optimize an MECP; instead, it locates the lowest-energy structure for state A, while its energy difference between state B is constrained to be the value set by *fix_dE* option. It is especially useful for searching for a structure with an IP or EA exactly controlled, or the lowest-energy structure with a given excitation energy. An example is shown in tutorial.
+Since the **2024**Oct version (kst48_2024Oct.py), a new feature named "Fix-DE" has been added. It does not optimize an MECP; instead, it locates the lowest-energy structure for state A, while its energy difference between state B is constrained to be the value set by *fix_dE* option. This feature is achieve by optimizing the following function, which is a Lagrangian multiplier method:
+
+$E_1 + \lambda (E_1 - E_2 - E_{target})$
+
+It is especially useful for searching for a structure with an IP or EA exactly controlled, or the lowest-energy structure with a given excitation energy. An example is shown in tutorial.
 
 # Citation
 Any use of this code MUST cite this Github Page (https://github.com/RimoAccelerator/KST48/), and it is encouraged to cite the author's first article using KST48. The citation is listed as the following:

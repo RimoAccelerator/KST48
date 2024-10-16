@@ -326,7 +326,7 @@ def inputParser(Path):
     LST1 = numpy.mat(LST1)
     LST2 = numpy.mat(LST2)
     PROG_COMM = command[PROG]
-    if charge2 == None:
+    if charge2 == '':
         charge2 = charge
     return [nprocs, mem, charge, charge2, mult1, mult2, method, runMode, state1, state2]
 

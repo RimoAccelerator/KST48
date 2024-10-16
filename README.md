@@ -141,6 +141,45 @@ $E_1 + \lambda (E_1 - E_2 - E_{target})$
 
 It is especially useful for searching for a structure with an IP or EA exactly controlled, or the lowest-energy structure with a given excitation energy. An example is shown in tutorial.
 
+# KST48Freq Module
+
+KST48_Freq is a submodule for vibrational analysis of a crossing point.
+
+The vibrational analysis is only reliable when the structure is a stationary point. However, for an MECP calculation, a converged structure is NOT a stationary point on the 3N-6 degrees of freedom. This problem can be solved by projecting the Hessian matrix into the subspace spanned by the 3N-7 degrees of freedom, in which a correctly-located MECP is indeed a stationary point.
+
+The KST48Freq module is designed for this process. It requires two Gaussian fchk files for the frequency calculation of state A and B. During this process, the force constant matrix for each state is read, and an effective Hessian is obtained by:
+
+$ \boldsymbol{H}_{eff}=(1-\boldsymbol{P})((1-\lambda)\boldsymbol{H}_1+\lambda \boldsymbol{H}_2)(1-\boldsymbol{P})$
+
+$\lambda=|\boldsymbol{g}_1|/(|\boldsymbol{g}_1-\boldsymbol{g}_2|)$
+
+in which $\boldsymbol{P}$ is the projection matrix that projects out the 6 degrees of freedom for rotation and translation, and the 1 degree of freedom on the direction $\boldsymbol{g}_1-\boldsymbol{g}_2$
+
+**Usage**:
+
+Simply run `python3 kst48_freq.py`. It is an interactive program:
+
+```Freq
+Freq fchk file for state A?a.fchk
+Freq fchk file for state B?b.fchk
+Cosine for the angle formed by f1 and f2 is 0.9999592481491033
+Frequencies for the HEff of CP:
+[-2.13821824e-05 -2.13821824e-05 -4.41518653e-06  7.24372107e-06
+  7.24372107e-06  1.51873184e-05  2.94043963e-02  2.68187257e+03
+  3.04107649e+03]
+Now it's time to output something.
+Give me a freq log file so that I could replace the vibration information
+and output a new file to kst48_freq.out.
+Note that only the frequencies and modes are replaced,
+and all the other things are remained.
+It can be read by GoodVibes to obtain free energy correction.
+Your freq .log file?5_A_freq.log
+```
+
+Then a Gaussian-type file is outputted to kst48_freq.out, which can be visualized by GaussView. Ideally it should contain 3N-7 frequencies and normal modes. In some rare cases, it may contain less, because normal modes with wavenumber less than 5 cm-1 is removed during outputting.
+
+The output file can be recognized by GoodVibes for the calculation of thermal correction.
+
 # Citation
 Any use of this code MUST cite this Github Page (https://github.com/RimoAccelerator/KST48/), and it is encouraged to cite the author's first article using KST48. The citation is listed as the following:
 

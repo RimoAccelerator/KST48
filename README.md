@@ -143,13 +143,13 @@ It is especially useful for searching for a structure with an IP or EA exactly c
 
 # KST48Freq Module
 
-KST48_Freq is a submodule for vibrational analysis of a crossing point.
+KST48_Freq is a submodule for vibrational analysis of a crossing point, which is updated on Oct16, 2024.
 
 The vibrational analysis is only reliable when the structure is a stationary point. However, for an MECP calculation, a converged structure is NOT a stationary point on the 3N-6 degrees of freedom. This problem can be solved by projecting the Hessian matrix into the subspace spanned by the 3N-7 degrees of freedom, in which a correctly-located MECP is indeed a stationary point.
 
 The KST48Freq module is designed for this process. It requires two Gaussian fchk files for the frequency calculation of state A and B. During this process, the force constant matrix for each state is read, and an effective Hessian is obtained by:
 
-$ \boldsymbol{H}_{eff}=(1-\boldsymbol{P})((1-\lambda)\boldsymbol{H}_1+\lambda \boldsymbol{H}_2)(1-\boldsymbol{P})$
+$\boldsymbol{H}_{eff}=(1-\boldsymbol{P})((1-\lambda)\boldsymbol{H}_1+\lambda \boldsymbol{H}_2)(1-\boldsymbol{P})$
 
 $\lambda=|\boldsymbol{g}_1|/(|\boldsymbol{g}_1-\boldsymbol{g}_2|)$
 

@@ -180,6 +180,18 @@ Then a Gaussian-type file is outputted to kst48_freq.out, which can be visualize
 
 The output file can be recognized by GoodVibes for the calculation of thermal correction.
 
+# Tutorial
+Several tutorials are collected in [KST48 Tutorial.pdf](https://github.com/RimoAccelerator/KST48/blob/main/KST48%20Tutorial.pdf) and [Tutorial Fix_DE Method.pdf](https://github.com/RimoAccelerator/KST48/blob/main/Tutorial%20Fix_DE%20Method.pdf). Some typical applications are included:
+
+
++ Singlet-triplet MECP for transition metal complex
++ S1-T1 MECP of a TADF molecule
++ Gaussian ONIOM Calculation: S1/T1 MECP of Styrene in Explicit DCM
++ ORCA CASSCF: S0/S1 crossing point of CH2
++ ORCA SF-TDDFT: S-T crossing point for CH2
++ Fix DE Method
+
+
 # Citation
 Any use of this code MUST cite this Github Page (https://github.com/RimoAccelerator/KST48/), and it is encouraged to cite the author's first article using KST48. The citation is listed as the following:
 

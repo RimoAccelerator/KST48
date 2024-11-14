@@ -1,0 +1,48 @@
+nprocs = 28
+mem = 48GB # change this into the maxcore value for orca
+method = wb97xd def2svp scrf=(smd,solvent=acetonitrile) g09default scf=(xqc,maxcycle=64)
+td1 =  # keywords for td-dft (only for gaussian; please write it in the tail part for orca)
+td2 = 
+mp2 = false #set true for mp2 or doubly hybrid calculation in gaussian
+charge = -2
+mult1 = 1
+mult2 = 2
+mode = normal #normal; stable; read; inter_read; noread
+
+fix_dE = -4.68 # fix-dE opt: set the value to be the target dE (eV). When it is zero, a normal MECP optimization will be performed.
+charge2 = -1
+
+#New feature: atom fixation. Numbers start from 1. In the following example, Atom 3 is contained.
+#fixedAtoms = 5, 2-3 
+
+dE_thresh = 0.000050
+rms_thresh = 0.0025 # 0.1*default
+max_dis_thresh = 0.004 # 0.1*default
+max_g_thresh = 0.0007
+rms_g_thresh = 0.0005
+max_steps = 100
+max_step_size = 0.1
+reduced_factor = 0.5 # the gdiis stepsize will be reduced by this factor when rms_gradient is close to converge
+
+program = gaussian  #gaussian, orca, xtb
+gau_comm = 'g16'
+orca_comm = '/opt/orca5/orca'
+xtb_comm = 'xtb'
+
+*geom
+@C6CN6_vertRed.log
+*
+
+*tail1
+
+*
+
+*tail2
+*
+
+*constr
+#R 1 2 1.1
+#A 1 2 3 100.0
+#S R 7 9 1.5 15 0.1
+#S R 2 3 1.5 10 0.1
+*

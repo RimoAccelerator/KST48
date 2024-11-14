@@ -1,0 +1,21 @@
+%pal nprocs 28 end
+%maxcore 1000 
+! hf 6-31g(d) engrad 
+!moread 
+ %moinp "JOBS/b.gbw"
+ 
+
+ *xyz 0 1
+c  1.26786970824402  0.17181981296194854  7.925741068422396e-05
+h  1.9695680877872896  -0.6317354839666811  -3.962862756230571e-05
+h  0.2763912245842544  0.5655515351256043  -3.962878142593275e-05
+*
+% casscf nel 2 norb 2 nroots 2 weights[0] = 0,1
+maxiter 200
+OrbStep SuperCI # or any other from the list above
+SwitchStep DIIS # or any other from the list above
+ShiftUp 2.0 # static up-shift the virtual orbitals
+ShiftDn 2.0 # static down-shift the internal orbitals
+MinShift 0.6 # minimum separation subspaces
+end
+

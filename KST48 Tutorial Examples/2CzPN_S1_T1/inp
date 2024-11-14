@@ -1,0 +1,70 @@
+nprocs = 28
+mem = 48GB # change this into the maxcore value for orca
+method = 6-31g(d) m062x g09default scf=(xqc,maxcycle=64)
+td1 = td # keywords for td-dft (only for gaussian; please write it in the tail part for orca)
+td2 = 
+mp2 = false #set true for mp2 or doubly hybrid calculation in gaussian
+charge = 0
+mult1 = 1
+mult2 = 3
+mode = read #normal; stable; read; inter_read; noread
+
+dE_thresh = 0.000050
+rms_thresh = 0.0025 # 0.1*default
+max_dis_thresh = 0.004 # 0.1*default
+max_g_thresh = 0.0007
+rms_g_thresh = 0.0005
+max_steps = 100
+max_step_size = 0.1
+reduced_factor = 1 # the gdiis stepsize will be reduced by this factor when rms_gradient is close to converge
+
+program = gaussian  #gaussian, orca, xtb
+gau_comm = 'g16'
+orca_comm = '/opt/orca5/orca'
+xtb_comm = 'xtb'
+*geom
+@cont.log
+*
+
+*constr
+#R 2 23 2.0
+#R 23 37 2.0
+#A 1 2 3 100.0
+#S R 7 9 1.5 15 0.1
+#S R 2 3 1.5 10 0.1
+*
+
+*tail1
+-C -H -Mn -Co -Ag -Ni -Ni 0
+def2svp
+****
+-N -O -F -Cl 0
+6-31+G(d)
+****
+-Ce 0
+SDD
+****
+
+-Ce 0
+SDD
+
+
+*
+*tail2
+-C -H -Mn -Co -Ag -Ni -Ni 0
+def2svp
+****
+-N -O -F -Cl 0
+6-31+G(d)
+****
+-Ce 0
+SDD
+****
+
+-Ce 0
+SDD
+
+
+*
+
+

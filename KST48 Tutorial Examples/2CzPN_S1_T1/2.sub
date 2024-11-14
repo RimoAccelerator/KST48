@@ -1,0 +1,22 @@
+#!/bin/bash
+
+##====================##
+## Author: FUcreature ##
+## Version: 1.1       ##
+##====================##
+#SBATCH --job-name g16-unnamed
+#SBATCH --nodes 1
+#SBATCH --ntasks 28
+#SBATCH --partition 28c64g
+
+
+export g16root=/data/app/gaussian/C01-avx2/
+export GAUSS_SCRDIR=/tmp
+source /data/app/gaussian/C01-avx2/g16/bsd/g16.profile
+
+export PYTHONUNBUFFERED=1
+python3 kst48.py inp > kst48.out
+#name=CoBpy3_styrene_FH2O_SMComp_Sing
+#g16 $name
+#sed -i 's/stable=opt/opt freq guess=read/g' $name.gjf
+#g16 $name

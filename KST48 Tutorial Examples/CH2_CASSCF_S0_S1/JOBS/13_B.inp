@@ -1,0 +1,21 @@
+%pal nprocs 28 end
+%maxcore 1000 
+! hf 3-21g engrad 
+!moread 
+ %moinp "JOBS/b.gbw"
+ 
+
+ *xyz 0 1
+c  1.2244674707191416  0.11043349049493156  2.1778534463268067e-06
+h  2.001544084218138  -0.6083083864627526  -1.0889312133188265e-06
+h  0.2878174656612092  0.603510760099954  -1.0889029953616748e-06
+*
+% casscf nel 2 norb 2 nroots 2 weights[0] = 0,1
+maxiter 200
+orbstep superci_pt 
+switchstep diis 
+shiftup 2.0 
+shiftdn 2.0 
+minshift 0.6 
+end
+

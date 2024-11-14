@@ -1,0 +1,50 @@
+nprocs = 28
+mem = 1000 # change this into the maxcore value for orca
+method = b3lyp 6-31g(d)
+td1 =  # keywords for td-dft (only for gaussian; please write it in the tail part for orca)
+td2 = 
+mp2 = false #set true for mp2 or doubly hybrid calculation in gaussian
+charge = 0
+mult1 = 3
+mult2 = 3
+mode = normal #normal; stable; read; inter_read; noread
+
+dE_thresh = 0.000050
+rms_thresh = 0.0025 # 0.1*default
+max_dis_thresh = 0.004 # 0.1*default
+max_g_thresh = 0.0007
+rms_g_thresh = 0.0005
+max_steps = 100
+max_step_size = 0.1
+reduced_factor = 1 # the gdiis stepsize will be reduced by this factor when rms_gradient is close to converge
+
+program = orca  #gaussian, orca, xtb
+gau_comm = g16
+orca_comm = /opt/orca5/orca
+xtb_comm = xtb
+
+*geom
+ C                  1.40905202    0.37147736    0.00000000
+ H                  1.76570645   -0.63733264    0.00000000
+ H                  0.33905202    0.37149055    0.00000000
+*
+
+*tail1
+%TDDFT SF TRUE
+NROOTS 2
+IROOT 0
+END
+*
+*tail2
+%TDDFT SF TRUE
+NROOTS 2
+IROOT 1
+END
+*
+
+*constr
+#R 1 2 1.0
+#A 1 2 3 100.0
+#S R 8 11 2.9 15 -0.1
+#S R 2 3 1.5 10 0.1
+*

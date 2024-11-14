@@ -38,10 +38,14 @@ DELETE_GBW = False
 LAMBDAS = []
 BAGELMODEL = ''
 
+FIX_DE = 0
+LAMBDA_DE = []
+
 def buildHeader(
         NProcs,
         Mem,
-        Charge,
+        Charge1,
+        Charge2,
         Mult1,
         Mult2,
         Method,
@@ -53,11 +57,11 @@ def buildHeader(
         header_1 = f'%chk=a.chk\n%nprocshared={NProcs} \n%mem={Mem} \n# {Method} {Td1} nosymm\n\n Title Card \n\n{CHARGEANDMULTFORONIOM1}'
         header_2 = f'%chk=b.chk\n%nprocshared={NProcs} \n%mem={Mem} \n# {Method} {Td2} nosymm\n\n Title Card \n\n{CHARGEANDMULTFORONIOM2}'
     elif Prog == 'gaussian':
-        header_1 = f'%chk=a.chk\n%nprocshared={NProcs} \n%mem={Mem} \n# {Method} {Td1} nosymm\n\n Title Card \n\n{Charge} {Mult1}'
-        header_2 = f'%chk=b.chk\n%nprocshared={NProcs} \n%mem={Mem} \n# {Method} {Td2} nosymm\n\n Title Card \n\n{Charge} {Mult2}'
+        header_1 = f'%chk=a.chk\n%nprocshared={NProcs} \n%mem={Mem} \n# {Method} {Td1} nosymm\n\n Title Card \n\n{Charge1} {Mult1}'
+        header_2 = f'%chk=b.chk\n%nprocshared={NProcs} \n%mem={Mem} \n# {Method} {Td2} nosymm\n\n Title Card \n\n{Charge2} {Mult2}'
     elif Prog == 'orca':
-        header_1 = f'%pal nprocs {NProcs} end\n%maxcore {Mem} \n! {Method} \n\n *xyz {Charge} {Mult1}'
-        header_2 = f'%pal nprocs {NProcs} end\n%maxcore {Mem} \n! {Method} \n\n *xyz {Charge} {Mult2}'
+        header_1 = f'%pal nprocs {NProcs} end\n%maxcore {Mem} \n! {Method} \n\n *xyz {Charge1} {Mult1}'
+        header_2 = f'%pal nprocs {NProcs} end\n%maxcore {Mem} \n! {Method} \n\n *xyz {Charge2} {Mult2}'
         if '***' in header_1:
             header_1 = header_1.replace('***', 'JOBS/a.gbw')
         if '***' in header_2:
@@ -68,7 +72,8 @@ def buildHeader(
 def buildInitJob(
         NProcs,
         Mem,
-        Charge,
+        Charge1,
+        Charge2,
         Mult1,
         Mult2,
         Method,
@@ -79,13 +84,13 @@ def buildInitJob(
     header_1, header_2 = ['', '']
     if RunMode == 'normal' or RunMode == 'read' or RunMode == 'noread':
         header_1, header_2 = buildHeader(
-            NProcs, Mem, Charge, Mult1, Mult2, Method, Prog, Td1=Td1, Td2=Td2)
+            NProcs, Mem, Charge1, Charge2, Mult1, Mult2, Method, Prog, Td1=Td1, Td2=Td2)
     elif RunMode == 'stable' or RunMode == 'inter_read':
         if Prog == 'gaussian':
             header_1, header_2 = buildHeader(
-                NProcs, Mem, Charge, Mult1, Mult2, Method + ' stable=opt', Prog)
+                NProcs, Mem, Charge1, Charge2, Mult1, Mult2, Method + ' stable=opt', Prog)
         elif Prog == 'orca':
-            header_1, header_2 = buildHeader(NProcs, Mem, Charge, Mult1, Mult2, Method +
+            header_1, header_2 = buildHeader(NProcs, Mem, Charge1, Charge2, Mult1, Mult2, Method +
                                              '\n %scf stabperform true StabRestartUHFifUnstable true end \n', Prog)
         else:
             raise Exception('This PROGram not supported for STABLE mode!')
@@ -166,7 +171,8 @@ def inputParser(Path):
     global CHARGEANDMULTFORONIOM2
     global ONIOMLAYERINFO
     global FIXEDATOMS
-    charge, mult1, mult2, method, nprocs, mem, state1, state2 = ['', '', '', '', '', '', '', '']
+    global FIX_DE
+    charge, mult1, mult2, method, nprocs, mem, state1, state2, charge2 = ['', '', '', '', '', '', '', '', '']
     command = {'gau': '', 'orca': '', 'xtb': '', 'bagel': ''}
     runMode = 'normal'
     ISONIOM = False
@@ -218,7 +224,7 @@ def inputParser(Path):
                 if len(l_splitted) > 4:
                     ONIOMLAYERINFO.append(' '.join(l_splitted[4:]))
             elif isGEOM and '@' in l: #2023 Oct: reading geometry from a Gaussian output file
-                geomArr, elementArr = externalGeomReader(l_bk.split('@')[1])
+                geomArr, elementArr = externalGeomReader(l_bk.strip().split('@')[1])
                 GEOM = geomArr[:]
                 LIST_ELEMENT = elementArr[:]
                 NUM_ATOM = len(LIST_ELEMENT)
@@ -256,6 +262,8 @@ def inputParser(Path):
                     CHARGEANDMULTFORONIOM1 = parameter
                 elif 'chargeandmultforoniom2' in l:
                     CHARGEANDMULTFORONIOM2 = parameter
+                elif 'charge2' in l:
+                    charge2 = parameter
                 elif 'charge' in l:
                     charge = parameter
                 elif 'method' in l:
@@ -312,12 +320,15 @@ def inputParser(Path):
                                 FIXEDATOMS.append(i)
                         else:
                             FIXEDATOMS.append(int(atomGroup) - 1)
-                
+                elif 'fix_de' in l:
+                    FIX_DE = float(parameter)
     GEOM = numpy.mat(GEOM)
     LST1 = numpy.mat(LST1)
     LST2 = numpy.mat(LST2)
     PROG_COMM = command[PROG]
-    return [nprocs, mem, charge, mult1, mult2, method, runMode, state1, state2]
+    if charge2 == '':
+        charge2 = charge
+    return [nprocs, mem, charge, charge2, mult1, mult2, method, runMode, state1, state2]
 
 
 def modifyMETHOD(Prog, Method, RunMode):
@@ -378,9 +389,6 @@ def readForceAndGeomForGaussian(path):
     geomArr = [float(i) for i in geomArr]
     # forceArr = [float(i)/0.529 for i in forceArr]
     forceArr = [float(i) for i in forceArr]
-    forceArr = addConstLag(geomArr, forceArr, CONSTRAINTS)
-    if len(geomArr) == NUM_ATOM * 3:
-        geomArr.extend(LAMBDAS)
     return [geomArr, forceArr, E]
 
 
@@ -425,9 +433,6 @@ def readForceAndGeomForORCA(path):
     # ORCA outputs gradients. Here it is adapted to gaussian, which is the
     # force
     forceArr = [-float(i) for i in forceArr]
-    forceArr = addConstLag(geomArr, forceArr, CONSTRAINTS)
-    if len(geomArr) == NUM_ATOM * 3:
-        geomArr.extend(LAMBDAS)
     return [geomArr, forceArr, E]
 
 def readForceAndGeomForBAGEL(path, state):
@@ -467,9 +472,6 @@ def readForceAndGeomForBAGEL(path, state):
     # force
     geomArr = [float(i) * 0.52918 for i in geomArr]  # change Bohr to angstrom
     forceArr = [-float(i) for i in forceArr]
-    forceArr = addConstLag(geomArr, forceArr, CONSTRAINTS)
-    if len(geomArr) == NUM_ATOM * 3:
-        geomArr.extend(LAMBDAS)
     #print(f'Now reading energy for the state {state}, it is {E}')
     return [geomArr, forceArr, E]
 
@@ -615,6 +617,7 @@ def addConstLag(geomArr, forceArr, constrList):
     constrR = []
     constrA = []
     constrD = []
+    constrE = []
     newForce = forceArr[:]
     applyForce = 10
     for i in constrList:
@@ -624,7 +627,7 @@ def addConstLag(geomArr, forceArr, constrList):
             constrR.append([int(i[1]) - 1, int(i[2]) - 1, float(i[3])])
         if i[0] == 'a':
             constrA.append([int(i[1]) - 1, int(i[2]) - 1, int(i[3]) - 1, math.cos(float(i[4]) / 180.0 * math.pi)])
-    totalConst = len(constrR) + len(constrA)
+    totalConst = len(constrR) + len(constrA) + len(constrE)
     if totalConst == 0:
         return newForce
     index = 0
@@ -643,7 +646,8 @@ def addConstLag(geomArr, forceArr, constrList):
         dCondition_dR[index, i[1] * 3 + 2] = - (z1 - z2) / r12
         dL_dlambda.append(r12 - i[2])
         index += 1
-    for i in constrA:
+    for j in range(len(constrA)):
+        i = constrA[index]
         # constraint for angle ABC: lambda * ((BA dot BC)/|BA||BC| - cosAngle)^2
         # its deriv: lambda * (cos_current - target) * d(cos)
         xA, yA, zA = geomArr[i[0] * 3: i[0] * 3 + 3]
@@ -677,17 +681,51 @@ def addConstLag(geomArr, forceArr, constrList):
         dCondition_dR[index, i[2] * 3 + 2] = dCos_dzC
         dL_dlambda.append(cosAngle_current - cosTarget)
         index += 1
+    #if len(constrE) > 1:
+    #    raise Exception("More than one dE constraints are employed. Which one should I follow?")
+    #elif len(constrE) == 1:
+    #    if forceArr1 == None or forceArr2 == None:
+    #        raise Exception("Fix-dE opt is set but forces are not delivered correctly.")
+    #    dE_target = constrE[0][0]
+    #    dL_dlambda.append(E1 - E2 - dE_target)
+    #    for i in range(len(forceArr)):
+    #        dCondition_dR[index, i] = forceArr1[i] - forceArr2 [i]
     if LAMBDAS == []:  # now generate lambda = C_T*G/(C.T*C), G=original gradient, C=dConstraint/dx
         LAMBDAS = [(-float(dCondition_dR[i, :] * numpy.mat(forceArr).T) \
                     / numpy.dot(dCondition_dR[0, :], dCondition_dR[0, :].T)) \
                    * (len(constrR) + len(constrA)) for i in range(totalConst)]
     # LAMBDAS = [0.5] * totalConst
-    print(LAMBDAS)
+    print(f'The current multipliers for geometry constraints are {LAMBDAS}')
     dCondition_dR = numpy.mat(LAMBDAS) * dCondition_dR
     for i in range(len(newForce)):
         for j in range(totalConst):
             newForce[i] += dCondition_dR[j, i]
     newForce.extend(dL_dlambda)
+    return newForce
+
+
+# add constraints with the Lagrange method
+# constr list:[['r', 1 , 2, 1.5], ['a', 1, 2, 3]], starting from 1
+def addConstDE(geomArr, forceArr, targetDE, E1 = 0.0, E2 = 0.0, forceArr1 = None, forceArr2 = None): # E1, E2, forceArr1, forceArr2 used only for fix-dE opt
+    global LAMBDA_DE
+    constrR = []
+    constrA = []
+    constrD = []
+    constrE = []
+    newForce = forceArr[:]
+    targetDE = targetDE * 96485 / 4184 / 627.51
+    index = 0
+    dL_dlambda = E1 - E2 - targetDE
+    dCondition_dR = numpy.zeros(shape=(1, NUM_ATOM * 3 + len(LAMBDAS)))
+    for i in range(NUM_ATOM * 3):
+        dCondition_dR[0, i] = forceArr1[i] - forceArr2[i]
+    if LAMBDA_DE == []:
+        LAMBDA_DE.append(0)
+    dCondition_dR = LAMBDA_DE * dCondition_dR
+    for i in range(len(newForce)):
+        newForce[i] += dCondition_dR[0, i]
+    newForce.append(dL_dlambda)
+    print(f'The current multiplier for fix-dE optimization is {LAMBDA_DE}')
     return newForce
 
 
@@ -764,8 +802,8 @@ def runEachStep(Geom, NStep, Header_A, Header_B, Tail1, Tail2, BagelModel, mult1
     elif PROG == 'orca':
         writeORCA(Geom, Header_A, Tail1, f'JOBS/{NStep}_A.inp')
         writeORCA(Geom, Header_B, Tail2, f'JOBS/{NStep}_B.inp')
-        os.system(f'{PROG_COMM} JOBS/{NStep}_B.inp > JOBS/{NStep}_B.out')
-        os.system(f'{PROG_COMM} JOBS/{NStep}_A.inp > JOBS/{NStep}_A.out')
+        os.system(f'{PROG_COMM} JOBS/{NStep}_B.inp > JOBS/{NStep}_B.log')
+        os.system(f'{PROG_COMM} JOBS/{NStep}_A.inp > JOBS/{NStep}_A.log')
         if DELETE_GBW:
             os.system(f'rm -rf JOBS/{NStep}_B.gbw')
             os.system(f'rm -rf JOBS/{NStep}_A.gbw')
@@ -785,9 +823,13 @@ def runEachStep(Geom, NStep, Header_A, Header_B, Tail1, Tail2, BagelModel, mult1
         os.system(f'{PROG_COMM} JOBS/{NStep}_A.json > JOBS/{NStep}_A.log')
         writeXYZ(Geom, f'JOBS/{NStep}.xyz')
 
+
 def getG(NStep, state1 = 0, state2 = 0):
-    _, f1, E1 = readForceAndGeom(f'JOBS/{NStep}_A.log', state1)
-    _, f2, E2 = readForceAndGeom(f'JOBS/{NStep}_B.log', state2)
+    global LAMBDAS
+    geomArr, f1, E1 = readForceAndGeom(f'JOBS/{NStep}_A.log', state1)
+    f1 = addConstLag(geomArr, f1, CONSTRAINTS)
+    geomArr, f2, E2 = readForceAndGeom(f'JOBS/{NStep}_B.log', state2)
+    f2 = addConstLag(geomArr, f2, CONSTRAINTS)
     f1 = -numpy.array(f1)
     f2 = -numpy.array(f2)
     xVec = (f1 - f2)  # Please check this sign here
@@ -797,14 +839,24 @@ def getG(NStep, state1 = 0, state2 = 0):
     fVec = (E1 - E2) * xVecNorm
     # fVec = (E1-E2)*xVec #if use this, f will be rather small, resulting in
     # inefficient optimization with repsect to dE
-    gVec = (f1 - numpy.dot(xVecNorm, f1) * xVecNorm)  # *0.001 may help BGFS
-    return fVec + gVec, E1, E2  # return an python array
-    # return f1, E1, E2 # for debugging: to output force for the 1st state
-
-# return f1, E1, E2 # for debugging: to output force for the 1st state
+    gVec = (f1 - numpy.dot(xVecNorm, f1) * xVecNorm)  # *0.001 may help BGFS\
+    effiecient_g = fVec + gVec
+    #if FIX_DE == 0:
+    #    effiecient_g = addConstLag(geomArr, effiecient_g.tolist(), CONSTRAINTS)
+    #else:
+    #    effiecient_g = addConstLag(geomArr, effiecient_g.tolist(), CONSTRAINTS,\
+    #     E1 = E1, E2 = E2, forceArr1 = f1.tolist(), forceArr2 = f2.tolist())
+    if FIX_DE != 0:
+        effiecient_g = addConstDE(geomArr, effiecient_g.tolist(), FIX_DE,\
+            E1 = E1, E2 = E2, forceArr1 = f1.tolist(), forceArr2 = f2.tolist())
+    geomArr.extend(LAMBDAS)
+    geomArr.extend(LAMBDA_DE)
+    effiecient_g = numpy.array(effiecient_g)
+    return numpy.mat(geomArr), effiecient_g, E1, E2  
 
 def propagationBFGS(X0, Gk, Bk):
     global LAMBDAS
+    global LAMBDA_DE
     # rho = 0.01 #set rho = 0.01 for minimum opt, and 15 for MECP opt
     rho = 15
     dk = -numpy.linalg.solve(Bk, Gk)
@@ -812,16 +864,20 @@ def propagationBFGS(X0, Gk, Bk):
         dk = dk * 0.1 / numpy.linalg.norm(dk)
     XNew = X0 + rho * dk
     if len(LAMBDAS) != 0:
-        LAMBDAS = XNew[0, -len(LAMBDAS):].tolist()[0]
+        LAMBDAS = XNew[0, -len(LAMBDAS) - len(LAMBDA_DE) : -len(LAMBDA_DE)].tolist()[0]
+    if LAMBDA_DE != []:
+        LAMBDA_DE = [XNew[0, -1]]
     return XNew
 
 def propagationGDIIS(Xs, Gs, Hs):
     # Produce a new geometry based on the GDIIS algorith, see https://manual.q-chem.com/5.3/A1.S7.html
     global LAMBDAS
+    global LAMBDA_DE
     dimension = len(Xs)
     if len(Hs) != len(Xs):
         raise Exception('Runtime exception: H and X dimensions are different.')
-    EMat = numpy.mat(numpy.zeros(shape=(dimension, NUM_ATOM * 3 + len(LAMBDAS))))
+    EMat = numpy.mat(numpy.zeros(shape=(dimension, NUM_ATOM * 3 + len(LAMBDAS) + len(LAMBDA_DE))))
+
     H_mean = Hs[0]
     for i in range(1, dimension):
         H_mean += Hs[i]
@@ -838,9 +894,9 @@ def propagationGDIIS(Xs, Gs, Hs):
     y = numpy.append(numpy.zeros(dimension), 1)
     c = numpy.linalg.solve(BMat, y)
     c = numpy.delete(c, -1)  # delete the last element, lambda, in c vector
-    XNew_prime = numpy.mat(numpy.zeros(NUM_ATOM * 3 + len(LAMBDAS)))
-    GNew_prime = numpy.mat(numpy.zeros(NUM_ATOM * 3 + len(LAMBDAS)))
-    HNew_prime = numpy.mat(numpy.zeros(shape=(NUM_ATOM * 3 + len(LAMBDAS), NUM_ATOM * 3 + len(LAMBDAS))))
+    XNew_prime = numpy.mat(numpy.zeros(NUM_ATOM * 3 + len(LAMBDAS) + len(LAMBDA_DE)))
+    GNew_prime = numpy.mat(numpy.zeros(NUM_ATOM * 3 + len(LAMBDAS) + len(LAMBDA_DE)))
+    HNew_prime = numpy.mat(numpy.zeros(shape=(NUM_ATOM * 3 + len(LAMBDAS) + len(LAMBDA_DE), NUM_ATOM * 3 + len(LAMBDAS) + len(LAMBDA_DE))))
     for i in range(dimension):
         XNew_prime += Xs[i] * c[i]
         GNew_prime += Gs[i] * c[i]
@@ -848,7 +904,12 @@ def propagationGDIIS(Xs, Gs, Hs):
     # XNew = XNew_prime - GNew_prime
     XNew = XNew_prime - (H_mean.I * numpy.mat(GNew_prime).T).flatten()
     # XNew = XNew_prime - (HNew_prime.I * numpy.mat(GNew_prime).T).flatten()
-    LAMBDAS = XNew[0, NUM_ATOM * 3 - len(LAMBDAS) + 1:].tolist()[0]
+    
+    #LAMBDAS = XNew[0, NUM_ATOM * 3 - len(LAMBDAS) + 1:].tolist()[0]
+    if len(LAMBDAS) != 0:
+        LAMBDAS = XNew[0, -len(LAMBDAS) - len(LAMBDA_DE) : -len(LAMBDA_DE)].tolist()[0]
+    if LAMBDA_DE != []:
+        LAMBDA_DE = [XNew[0, -1]]
     return XNew
 
 
@@ -924,7 +985,7 @@ def BFGS(X0, G0, B0, nstep, state1 = 0, state2 = 0, mult1 = 1, mult2 = 1):
     XNew = MaxStep(X0, XNew)
     runEachStep(XNew, nstep + 1, HEADER_A, HEADER_B, TAIL1, TAIL2, BAGELMODEL, mult1, mult2, state1, state2)
     sk = XNew - X0
-    GNew, E1, E2 = getG(nstep + 1, state1 = state1, state2 = state2)
+    _, GNew, E1, E2 = getG(nstep + 1, state1 = state1, state2 = state2)
     yk = numpy.mat(GNew - G0)
     Bk = HessianUpdator(B0, yk, sk)
     # Bk_BFGS = Bk - (Bk * sk.T * sk * Bk) / float(sk * Bk * sk.T) + (yk.T * yk) / float(yk * sk.T)
@@ -943,7 +1004,7 @@ def GDIIS(Xs, Gs, Bs, nstep, Es, flag='gdiis', state1 = 0, state2 = 0, mult1 = 1
     XNew = MaxStep(Xs[-1], XNew, factor)
     runEachStep(XNew, nstep + 1, HEADER_A, HEADER_B, TAIL1, TAIL2, BAGELMODEL, mult1, mult2, state1, state2)
     sk = XNew - Xs[-1]
-    GNew, E1, E2 = getG(nstep + 1, state1 = state1, state2 = state2)
+    _, GNew, E1, E2 = getG(nstep + 1, state1 = state1, state2 = state2)
     yk = numpy.mat(GNew - Gs[-1])
     Bk = HessianUpdator(Bs[-1], yk, sk)
     return [XNew, GNew, Bk, E1, E2]
@@ -951,6 +1012,9 @@ def GDIIS(Xs, Gs, Bs, nstep, Es, flag='gdiis', state1 = 0, state2 = 0, mult1 = 1
 
 def isConverged(E1, E2, X0, X1, G1):
     dE = E2 - E1
+    if FIX_DE != 0:
+        dE = -dE - FIX_DE * 96485 / 4184 /627.51 
+    print(numpy.linalg.norm(X0 - X1))
     rms = numpy.linalg.norm(X0 - X1) / math.sqrt(NUM_ATOM * 3)
     maxDis = 0
     for i in range(0, NUM_ATOM * 3, 3):
@@ -988,8 +1052,14 @@ def isConverged(E1, E2, X0, X1, G1):
         rms_g_isConv = 'YES'
         conv_flag += 1
     print(f'E1 = {E1}\nE2 = {E2}')
-    print(
-        f'deltaE                    {dE:5f}     {THRESH_dE:5f}     {dE_isConv}')
+    if FIX_DE == 0:
+        print(
+            f'deltaE                    {dE:5f}     {THRESH_dE:5f}     {dE_isConv}')
+    else:
+        print(
+            f'deltaE  (eV)              {(E1 - E2) * 627.51 / (96485 / 4184):5f}')
+        print(
+            f'deviation of dE (a.u.)    {dE:5f}     {THRESH_dE:5f}     {dE_isConv}')
     print(
         f'RMS Gradient              {rmsG:5f}     {THRESH_RMS_G:5f}     {rms_g_isConv}')
     print(
@@ -1004,9 +1074,8 @@ def isConverged(E1, E2, X0, X1, G1):
         return False
 
 def runOpt(X0, flag='hybrid', state1 = 0, state2 = 0, mult1 = 0, mult2 = 0):
-    B0 = numpy.eye(numpy.shape(X0)[0])
-    X0 = numpy.mat(X0)
-    G0, E1, E2 = getG(0, state1 = state1, state2 = state2)
+    X0, G0, E1, E2 = getG(0, state1 = state1, state2 = state2)
+    B0 = numpy.eye(numpy.shape(X0)[1])
     n_step = 0
     Xs, Bs, Gs, Es = [[], [], [], []]
     X1, G1, B1, E1, E2 = [None, None, None, 0, 0]
@@ -1093,16 +1162,20 @@ def main():
     global GEOM
     global CONSTRAINTS
     print('****KST48 PROGRAM: a powerful tool for MECP locating****')
-    print('****By Yumiao Ma, BSJ Institute, 2023/10 Updated****\n')
+    print('****By Yumiao Ma, BSJ Institute, 2024/10 Updated****\n')
     if len(sys.argv) < 2:
         raise Exception('No input file found. Please run the program like: python3 kst48.py your_input_file')
     _, inp = sys.argv
-    nprocs, mem, charge, mult1, mult2, method, runMode, state1, state2 = inputParser(
+    nprocs, mem, charge, charge2, mult1, mult2, method, runMode, state1, state2 = inputParser(
         sys.argv[1])
     print(f'The current running mode is {runMode}.')
+    if FIX_DE != 0:
+        print('!!!!!!!!!!')
+        print(f'Note: the current program is running on FIX_DE MODE! The target dE (E1 - E2) is {FIX_DE} eV.')
+        print('!!!!!!!!!!')
     if  PROG != 'bagel':
         header_1, header_2 = buildInitJob(
-            nprocs, mem, charge, mult1, mult2, method, PROG, runMode)
+            nprocs, mem, charge, charge2, mult1, mult2, method, PROG, runMode)
         print(f'Note: This program is now running on {runMode} mode')
         if runMode == 'noread':
             DELETE_GBW = True
@@ -1135,7 +1208,7 @@ def main():
             print('****Initialization OK, now entering main loop****')
             print('****Before that, please check the keywords list****')
             HEADER_A, HEADER_B = buildInitJob(
-                nprocs, mem, charge, mult1, mult2, method, PROG, runMode, Td1=TD1, Td2=TD2)
+                nprocs, mem, charge, charge2, mult1, mult2, method, PROG, runMode, Td1=TD1, Td2=TD2)
             print(f'Header A:\n {HEADER_A}')
             print(f'Header B:\n {HEADER_B}')
             if len(FIXEDATOMS) > 0:
@@ -1154,9 +1227,8 @@ def main():
                 os.system(f'cp JOBS/{conv_step}_A.inp .')
                 os.system(f'cp JOBS/{conv_step}_B.inp .')
                 os.system(f'cp JOBS/a.gbw .; cp JOBS/b.gbw .')
-            os.system(f'cp JOBS/{conv_step}_A.out .')
-            os.system(f'cp JOBS/{conv_step}_B.out .')
-            os.system(f'cp JOBS/{conv_step}.xyz .')
+            os.system(f'cp JOBS/{conv_step}_A.log .')
+            os.system(f'cp JOBS/{conv_step}_B.log .')
         # Run PES Scan
         else:  # SCANS: [ [[r,A,B], [start, num, size] ], ... ]
             initial_cons_num = len(CONSTRAINTS)

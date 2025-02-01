@@ -276,15 +276,15 @@ def inputParser(Path):
                     state1 = int(parameter)
                 elif 'state2' in l:
                     state2 = int(parameter)
-                elif 'thresh_de' in l:
+                elif 'de_thresh' in l:
                     THRESH_dE = float(parameter)
-                elif 'thresh_rms' in l:
+                elif 'rms_thresh' in l:
                     THRESH_RMS = float(parameter)
-                elif 'thresh_max_dis' in l:
+                elif 'max_dis_thresh' in l:
                     THRESH_MAX_DIS = float(parameter)
-                elif 'thresh_max_g' in l:
+                elif 'max_g_thresh' in l:
                     THRESH_MAX_G = float(parameter)
-                elif 'thresh_rms_g' in l:
+                elif 'rms_g_thresh' in l:
                     THRESH_RMS_G = float(parameter)
                 elif 'max_steps' in l:
                     MAX_STEPS = float(parameter)
@@ -423,7 +423,7 @@ def readForceAndGeomForORCA(path):
                 forceArr.append(l.strip())
             elif isGeom and (re.match("\\s*[0-9]+\\s*\\-*[0-9]+", l) is not None):
                 geomArr.extend(l.split()[1:])
-    path = ''.join(splittedPath[:-1]) + '.out'
+    path = ''.join(splittedPath[:-1]) + '.log'
     with open(path) as f: 
     #the engrad file does not contain right TD-DFT energy for ORCA. Read it from .log
         for l in f.readlines():
